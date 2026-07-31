@@ -1,30 +1,12 @@
-import dayjs from 'dayjs';
-import 'dayjs/locale/ar';
-import 'dayjs/locale/de';
-import 'dayjs/locale/es';
-import 'dayjs/locale/fr';
-import 'dayjs/locale/ru';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { syncDayjsLocale } from './dayjsLocale';
 import ar from './locales/ar';
 import de from './locales/de';
 import en from './locales/en';
 import es from './locales/es';
 import fr from './locales/fr';
 import ru from './locales/ru';
-
-const DAYJS_LOCALES: Record<string, string> = {
-  en: 'en',
-  ar: 'ar',
-  es: 'es',
-  fr: 'fr',
-  ru: 'ru',
-  de: 'de',
-};
-
-function syncDayjsLocale(lang: string) {
-  dayjs.locale(DAYJS_LOCALES[lang] ?? 'en');
-}
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'en', dir: 'ltr' as const },

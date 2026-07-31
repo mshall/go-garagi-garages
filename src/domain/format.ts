@@ -1,6 +1,6 @@
 /** Locale-aware formatters — shared with future RN app */
 
-import i18n from '../i18n';
+import i18n from 'i18next';
 
 export function formatAed(amount: number): string {
   const lang = i18n.language || 'en';
