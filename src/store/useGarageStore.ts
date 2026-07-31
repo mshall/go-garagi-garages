@@ -44,7 +44,7 @@ interface GarageState {
   promotions: Promotion[];
   slots: CalendarSlot[];
   kpis: DashboardKpis;
-  notifications: number;
+  readNotificationIds: string[];
 
   login: (email: string, _password: string) => boolean;
   logout: () => void;
@@ -71,6 +71,8 @@ interface GarageState {
   deletePromotion: (id: string) => void;
 
   toggleSlot: (date: string, hour: number) => void;
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: (ids: string[]) => void;
   resetDemoData: () => void;
 }
 
@@ -88,7 +90,7 @@ const initialState = {
   promotions: SEED_PROMOTIONS,
   slots: SEED_SLOTS,
   kpis: SEED_KPIS,
-  notifications: 9,
+  readNotificationIds: [] as string[],
 };
 
 export const useGarageStore = create<GarageState>()(
@@ -133,7 +135,6 @@ export const useGarageStore = create<GarageState>()(
           bookings: s.bookings.map((b) =>
             b.id === id ? { ...b, status: 'confirmed' } : b,
           ),
-          notifications: Math.max(0, s.notifications - 1),
           kpis: {
             ...s.kpis,
             pendingBookings: Math.max(0, s.kpis.pendingBookings - 1),
@@ -150,7 +151,6 @@ export const useGarageStore = create<GarageState>()(
               ? { ...b, status: 'rejected', rejectionReason: reason }
               : b,
           ),
-          notifications: Math.max(0, s.notifications - 1),
           kpis: {
             ...s.kpis,
             pendingBookings: Math.max(0, s.kpis.pendingBookings - 1),
@@ -235,6 +235,20 @@ export const useGarageStore = create<GarageState>()(
           }),
         })),
 
+      markNotificationRead: (id) =>
+        set((s) =>
+          s.readNotificationIds.includes(id)
+            ? s
+            : { readNotificationIds: [...s.readNotificationIds, id] },
+        ),
+
+      markAllNotificationsRead: (ids) =>
+        set((s) => ({
+          readNotificationIds: Array.from(
+            new Set([...s.readNotificationIds, ...ids]),
+          ),
+        })),
+
       resetDemoData: () =>
         set({
           ...initialState,
@@ -244,7 +258,7 @@ export const useGarageStore = create<GarageState>()(
         }),
     }),
     {
-      name: 'go-garagi-garage-v1',
+      name: 'go-garagi-garage-v2',
       partialize: (s) => ({
         user: s.user,
         isAuthenticated: s.isAuthenticated,
@@ -259,7 +273,7 @@ export const useGarageStore = create<GarageState>()(
         promotions: s.promotions,
         slots: s.slots,
         kpis: s.kpis,
-        notifications: s.notifications,
+        readNotificationIds: s.readNotificationIds,
       }),
     },
   ),

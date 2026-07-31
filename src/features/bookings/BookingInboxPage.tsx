@@ -10,6 +10,7 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { BookingStatusChip } from '../../components/StatusChip';
 import type { BookingStatus } from '../../domain/types';
@@ -19,6 +20,7 @@ type TabKey = 'pending' | 'confirmed' | 'rejected';
 
 export function BookingInboxPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const bookings = useGarageStore((s) => s.bookings);
   const acceptBooking = useGarageStore((s) => s.acceptBooking);
   const [tab, setTab] = useState<TabKey>('pending');
@@ -84,7 +86,7 @@ export function BookingInboxPage() {
                   fullWidth
                   onClick={() => acceptBooking(booking.id)}
                 >
-                  Accept
+                  {t('common.accept')}
                 </Button>
                 <Button
                   variant="outlined"
@@ -92,7 +94,7 @@ export function BookingInboxPage() {
                   fullWidth
                   onClick={() => navigate(`/bookings/${booking.id}/reject`)}
                 >
-                  Reject
+                  {t('common.reject')}
                 </Button>
               </Stack>
             )}
@@ -115,15 +117,15 @@ export function BookingInboxPage() {
         variant="fullWidth"
         sx={{ borderBottom: 1, borderColor: 'divider' }}
       >
-        <Tab label="Pending" value="pending" />
-        <Tab label="Confirmed" value="confirmed" />
-        <Tab label="Rejected" value="rejected" />
+        <Tab label={t('bookings.pending')} value="pending" />
+        <Tab label={t('bookings.confirmed')} value="confirmed" />
+        <Tab label={t('bookings.rejected')} value="rejected" />
       </Tabs>
 
       {today.length > 0 && (
         <Box>
           <Typography variant="subtitle1" mb={1.5}>
-            Today&apos;s Bookings
+            {t('bookings.todaysBookings')}
           </Typography>
           <Stack spacing={1.5}>{today.map(renderCard)}</Stack>
         </Box>
@@ -132,7 +134,7 @@ export function BookingInboxPage() {
       {others.length > 0 && (
         <Box>
           <Typography variant="subtitle1" mb={1.5}>
-            Upcoming / Other
+            {t('bookings.upcomingOther')}
           </Typography>
           <Stack spacing={1.5}>{others.map(renderCard)}</Stack>
         </Box>
@@ -142,7 +144,7 @@ export function BookingInboxPage() {
         <Card>
           <CardContent>
             <Typography color="text.secondary" textAlign="center">
-              No {tab} bookings right now.
+              {t('bookings.empty', { status: t(`bookings.${tab}`) })}
             </Typography>
           </CardContent>
         </Card>

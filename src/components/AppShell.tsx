@@ -23,116 +23,133 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined';
 import ReviewsOutlinedIcon from '@mui/icons-material/ReviewsOutlined';
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
+import { useTranslation } from 'react-i18next';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { PageHeader } from './PageHeader';
+import { buildNotifications } from '../domain/notifications';
 import { useGarageStore } from '../store/useGarageStore';
+import { PageHeader } from './PageHeader';
 
 const DRAWER_WIDTH = 280;
 
-const navItems = [
-  { label: 'Home', path: '/', icon: <HomeOutlinedIcon />, mobile: true },
-  {
-    label: 'Bookings',
-    path: '/bookings',
-    icon: <InboxOutlinedIcon />,
-    mobile: true,
-    badge: true,
-  },
-  {
-    label: 'Quotes',
-    path: '/quotes',
-    icon: <RequestQuoteOutlinedIcon />,
-    mobile: false,
-  },
-  {
-    label: 'Calendar',
-    path: '/calendar',
-    icon: <CalendarMonthOutlinedIcon />,
-    mobile: false,
-  },
-  {
-    label: 'Services',
-    path: '/services',
-    icon: <HandymanOutlinedIcon />,
-    mobile: true,
-  },
-  {
-    label: 'Promotions',
-    path: '/promotions',
-    icon: <LocalOfferOutlinedIcon />,
-    mobile: false,
-  },
-  {
-    label: 'Reviews',
-    path: '/reviews',
-    icon: <ReviewsOutlinedIcon />,
-    mobile: false,
-  },
-  {
-    label: 'Earnings',
-    path: '/earnings',
-    icon: <PaymentsOutlinedIcon />,
-    mobile: false,
-  },
-  {
-    label: 'Reports',
-    path: '/reports',
-    icon: <AssessmentOutlinedIcon />,
-    mobile: true,
-  },
-  {
-    label: 'Profile',
-    path: '/profile',
-    icon: <PersonOutlineIcon />,
-    mobile: false,
-  },
-];
-
-const titles: Record<string, string> = {
-  '/': 'Dashboard',
-  '/bookings': 'Booking Inbox',
-  '/quotes': 'Quote Requests',
-  '/calendar': 'Calendar Availability',
-  '/services': 'Services & Pricing',
-  '/promotions': 'Promotions Manager',
-  '/reviews': 'Reviews',
-  '/earnings': 'Earnings & Payouts',
-  '/reports': 'Reports',
-  '/profile': 'Garage Profile',
-  '/profile/edit': 'Edit Garage Profile',
-};
-
 export function AppShell() {
   const theme = useTheme();
+  const { t, i18n } = useTranslation();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [, setLangTick] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
-  const notifications = useGarageStore((s) => s.notifications);
+  const bookings = useGarageStore((s) => s.bookings);
+  const quotes = useGarageStore((s) => s.quotes);
+  const reviews = useGarageStore((s) => s.reviews);
+  const readIds = useGarageStore((s) => s.readNotificationIds);
+
+  const unreadCount = useMemo(() => {
+    const all = buildNotifications({ bookings, quotes, reviews });
+    return all.filter((n) => !readIds.includes(n.id)).length;
+  }, [bookings, quotes, reviews, readIds]);
+
+  const navItems = useMemo(
+    () => [
+      { label: t('nav.home'), path: '/', icon: <HomeOutlinedIcon />, badge: false },
+      {
+        label: t('nav.bookings'),
+        path: '/bookings',
+        icon: <InboxOutlinedIcon />,
+        badge: true,
+      },
+      {
+        label: t('nav.quotes'),
+        path: '/quotes',
+        icon: <RequestQuoteOutlinedIcon />,
+        badge: false,
+      },
+      {
+        label: t('nav.calendar'),
+        path: '/calendar',
+        icon: <CalendarMonthOutlinedIcon />,
+        badge: false,
+      },
+      {
+        label: t('nav.services'),
+        path: '/services',
+        icon: <HandymanOutlinedIcon />,
+        badge: false,
+      },
+      {
+        label: t('nav.promotions'),
+        path: '/promotions',
+        icon: <LocalOfferOutlinedIcon />,
+        badge: false,
+      },
+      {
+        label: t('nav.reviews'),
+        path: '/reviews',
+        icon: <ReviewsOutlinedIcon />,
+        badge: false,
+      },
+      {
+        label: t('nav.earnings'),
+        path: '/earnings',
+        icon: <PaymentsOutlinedIcon />,
+        badge: false,
+      },
+      {
+        label: t('nav.reports'),
+        path: '/reports',
+        icon: <AssessmentOutlinedIcon />,
+        badge: false,
+      },
+      {
+        label: t('nav.profile'),
+        path: '/profile',
+        icon: <PersonOutlineIcon />,
+        badge: false,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- i18n.language drives re-translate
+    [t, i18n.language],
+  );
+
+  const titleMap: Record<string, string> = {
+    '/': t('titles.dashboard'),
+    '/bookings': t('titles.bookingInbox'),
+    '/quotes': t('titles.quoteRequests'),
+    '/calendar': t('titles.calendar'),
+    '/services': t('titles.services'),
+    '/promotions': t('titles.promotions'),
+    '/reviews': t('titles.reviews'),
+    '/earnings': t('titles.earnings'),
+    '/reports': t('titles.reports'),
+    '/profile': t('titles.profile'),
+    '/profile/edit': t('titles.editProfile'),
+  };
 
   const mobileValue = useMemo(() => {
     const mobilePaths = ['/', '/bookings', '/services', '/reports'];
     const match = mobilePaths.find(
-      (p) => location.pathname === p || (p !== '/' && location.pathname.startsWith(p)),
+      (p) =>
+        location.pathname === p ||
+        (p !== '/' && location.pathname.startsWith(p)),
     );
     return match ?? '/';
   }, [location.pathname]);
 
   const title =
-    titles[location.pathname] ??
-    (location.pathname.startsWith('/bookings/')
-      ? 'Reject Booking'
-      : 'Go Garagi');
+    titleMap[location.pathname] ??
+    (location.pathname.includes('/reject')
+      ? t('titles.rejectBooking')
+      : t('app.name'));
 
   const drawer = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Toolbar sx={{ px: 2.5 }}>
         <Box>
           <Typography variant="subtitle1" color="primary" fontWeight={800}>
-            Go Garagi
+            {t('app.name')}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Garage Operating System
+            {t('app.tagline')}
           </Typography>
         </Box>
       </Toolbar>
@@ -152,9 +169,11 @@ export function AppShell() {
               }}
               sx={{ borderRadius: 2, mb: 0.5 }}
             >
-              <ListItemIcon sx={{ minWidth: 40, color: selected ? 'primary.main' : 'inherit' }}>
+              <ListItemIcon
+                sx={{ minWidth: 40, color: selected ? 'primary.main' : 'inherit' }}
+              >
                 {item.badge ? (
-                  <Badge badgeContent={notifications} color="error">
+                  <Badge badgeContent={unreadCount} color="error">
                     {item.icon}
                   </Badge>
                 ) : (
@@ -202,7 +221,11 @@ export function AppShell() {
           title={title}
           showMenu={!isDesktop}
           onMenuClick={() => setDrawerOpen(true)}
-          showBack={location.pathname.includes('/reject') || location.pathname.includes('/edit')}
+          showBack={
+            location.pathname.includes('/reject') ||
+            location.pathname.includes('/edit')
+          }
+          onLanguageChanged={() => setLangTick((n) => n + 1)}
         />
         <Box
           sx={{
@@ -231,23 +254,27 @@ export function AppShell() {
               pb: 'env(safe-area-inset-bottom)',
             }}
           >
-            <BottomNavigationAction label="Home" value="/" icon={<HomeOutlinedIcon />} />
             <BottomNavigationAction
-              label="Bookings"
+              label={t('nav.home')}
+              value="/"
+              icon={<HomeOutlinedIcon />}
+            />
+            <BottomNavigationAction
+              label={t('nav.bookings')}
               value="/bookings"
               icon={
-                <Badge badgeContent={notifications} color="error">
+                <Badge badgeContent={unreadCount} color="error">
                   <InboxOutlinedIcon />
                 </Badge>
               }
             />
             <BottomNavigationAction
-              label="Services"
+              label={t('nav.services')}
               value="/services"
               icon={<HandymanOutlinedIcon />}
             />
             <BottomNavigationAction
-              label="Reports"
+              label={t('nav.reports')}
               value="/reports"
               icon={<AssessmentOutlinedIcon />}
             />

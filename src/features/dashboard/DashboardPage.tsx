@@ -11,12 +11,14 @@ import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { formatPercent } from '../../domain/format';
 import { useGarageStore } from '../../store/useGarageStore';
 
 export function DashboardPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const kpis = useGarageStore((s) => s.kpis);
   const garage = useGarageStore((s) => s.garage);
   const pendingCount = useGarageStore(
@@ -25,21 +27,21 @@ export function DashboardPage() {
 
   const kpiCards = [
     {
-      label: 'Bookings This Week',
+      label: t('dashboard.bookingsThisWeek'),
       value: kpis.bookingsThisWeek,
       trend: kpis.bookingsTrend,
       color: '#2563EB',
       icon: <CalendarMonthOutlinedIcon />,
     },
     {
-      label: 'Pending Bookings',
+      label: t('dashboard.pendingBookings'),
       value: pendingCount || kpis.pendingBookings,
       trend: kpis.pendingTrend,
       color: '#DC2626',
       icon: <InboxOutlinedIcon />,
     },
     {
-      label: 'Average Rating',
+      label: t('dashboard.averageRating'),
       value: kpis.averageRating,
       trend: kpis.ratingTrend,
       color: '#16A34A',
@@ -48,21 +50,33 @@ export function DashboardPage() {
   ];
 
   const shortcuts = [
-    { label: 'Edit Profile', icon: <PersonOutlineIcon />, path: '/profile/edit' },
-    { label: 'Manage Services', icon: <WorkOutlineIcon />, path: '/services' },
     {
-      label: 'Calendar Availability',
+      label: t('dashboard.editProfile'),
+      icon: <PersonOutlineIcon />,
+      path: '/profile/edit',
+    },
+    {
+      label: t('dashboard.manageServices'),
+      icon: <WorkOutlineIcon />,
+      path: '/services',
+    },
+    {
+      label: t('dashboard.calendarAvailability'),
       icon: <CalendarMonthOutlinedIcon />,
       path: '/calendar',
     },
-    { label: 'Booking Inbox', icon: <InboxOutlinedIcon />, path: '/bookings' },
+    {
+      label: t('dashboard.bookingInbox'),
+      icon: <InboxOutlinedIcon />,
+      path: '/bookings',
+    },
   ];
 
   return (
     <Stack spacing={3}>
       <Box>
         <Typography variant="body2" color="text.secondary">
-          Welcome back
+          {t('dashboard.welcome')}
         </Typography>
         <Typography variant="h5">{garage.name}</Typography>
         <Chip
@@ -75,7 +89,7 @@ export function DashboardPage() {
 
       <Box>
         <Typography variant="subtitle1" mb={1.5}>
-          Key Performance Indicators
+          {t('dashboard.kpis')}
         </Typography>
         <Grid container spacing={2}>
           {kpiCards.map((kpi) => (
@@ -121,7 +135,7 @@ export function DashboardPage() {
 
       <Box>
         <Typography variant="subtitle1" mb={1.5}>
-          Quick Access
+          {t('dashboard.quickAccess')}
         </Typography>
         <Grid container spacing={2}>
           {shortcuts.map((item) => (

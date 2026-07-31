@@ -1,7 +1,7 @@
-import { createTheme, alpha } from '@mui/material/styles';
+import { createTheme, alpha, type ThemeOptions } from '@mui/material/styles';
 
-/** Material Design 3 inspired theme for Go Garagi Garage */
-export const md3Theme = createTheme({
+/** Material Design 3 inspired theme options for Go Garagi Garage */
+export const md3ThemeOptions: ThemeOptions = {
   cssVariables: true,
   palette: {
     mode: 'light',
@@ -140,7 +140,7 @@ export const md3Theme = createTheme({
     MuiDrawer: {
       styleOverrides: {
         paper: {
-          borderRight: '1px solid #E2E8F0',
+          borderInlineEnd: '1px solid #E2E8F0',
           backgroundColor: '#FFFFFF',
         },
       },
@@ -156,4 +156,6 @@ export const md3Theme = createTheme({
       },
     },
   },
-});
+};
+
+export const md3Theme = createTheme(md3ThemeOptions);

@@ -1,21 +1,23 @@
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
-import Badge from '@mui/material/Badge';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MenuIcon from '@mui/icons-material/Menu';
-import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useGarageStore } from '../store/useGarageStore';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { NotificationsMenu } from './NotificationsMenu';
 
 interface PageHeaderProps {
   title: string;
   showBack?: boolean;
   onMenuClick?: () => void;
   showMenu?: boolean;
+  onLanguageChanged?: () => void;
 }
 
 export function PageHeader({
@@ -23,20 +25,21 @@ export function PageHeader({
   showBack,
   onMenuClick,
   showMenu,
+  onLanguageChanged,
 }: PageHeaderProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const user = useGarageStore((s) => s.user);
-  const notifications = useGarageStore((s) => s.notifications);
 
   return (
     <AppBar position="sticky" color="transparent">
-      <Toolbar sx={{ gap: 0.5, minHeight: { xs: 56, sm: 64 } }}>
+      <Toolbar sx={{ gap: 0.25, minHeight: { xs: 56, sm: 64 } }}>
         {showBack ? (
-          <IconButton edge="start" onClick={() => navigate(-1)} aria-label="Back">
+          <IconButton edge="start" onClick={() => navigate(-1)} aria-label={t('common.back')}>
             <ArrowBackIcon />
           </IconButton>
         ) : showMenu ? (
-          <IconButton edge="start" onClick={onMenuClick} aria-label="Menu">
+          <IconButton edge="start" onClick={onMenuClick} aria-label={t('common.menu')}>
             <MenuIcon />
           </IconButton>
         ) : (
@@ -48,16 +51,17 @@ export function PageHeader({
             flex: 1,
             textAlign: 'center',
             fontWeight: 700,
-            fontSize: { xs: '1.05rem', sm: '1.25rem' },
+            fontSize: { xs: '1rem', sm: '1.25rem' },
+            px: 0.5,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
           }}
         >
           {title}
         </Typography>
-        <IconButton aria-label="Notifications" onClick={() => navigate('/bookings')}>
-          <Badge badgeContent={notifications} color="error">
-            <NotificationsNoneIcon />
-          </Badge>
-        </IconButton>
+        <LanguageSwitcher onLanguageChanged={() => onLanguageChanged?.()} />
+        <NotificationsMenu />
         <Avatar
           sx={{
             width: 36,
@@ -65,6 +69,7 @@ export function PageHeader({
             bgcolor: 'primary.main',
             fontSize: '0.85rem',
             cursor: 'pointer',
+            ml: 0.25,
           }}
           onClick={() => navigate('/profile')}
         >
