@@ -104,6 +104,15 @@ export interface Payout {
   status: 'pending' | 'paid' | 'held';
   createdAt: string;
   description: string;
+  serviceName: string;
+  customerName: string;
+  vehicle?: string;
+  category: 'service' | 'accident' | 'wash' | 'parts';
+  grossAed: number;
+  platformFeeAed: number;
+  netAed: number;
+  paymentMethod: 'card' | 'escrow' | 'bank_transfer';
+  completedAt?: string;
 }
 
 export interface Promotion {

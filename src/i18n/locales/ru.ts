@@ -69,6 +69,8 @@ const ru: TranslationSchema = {
     quickAccess: 'Быстрый доступ',
     bookingsThisWeek: 'Записи за неделю',
     pendingBookings: 'Ожидающие записи',
+    quotesDoneWeek: 'Оценки за неделю',
+    quotesPending: 'Ожидающие оценки',
     averageRating: 'Средняя оценка',
     editProfile: 'Редактировать профиль',
     manageServices: 'Управление услугами',

@@ -69,6 +69,8 @@ const es: TranslationSchema = {
     quickAccess: 'Acceso rápido',
     bookingsThisWeek: 'Reservas esta semana',
     pendingBookings: 'Reservas pendientes',
+    quotesDoneWeek: 'Cotizaciones hechas esta semana',
+    quotesPending: 'Cotizaciones pendientes',
     averageRating: 'Valoración media',
     editProfile: 'Editar perfil',
     manageServices: 'Gestionar servicios',

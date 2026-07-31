@@ -67,6 +67,8 @@ const en = {
     quickAccess: 'Quick Access',
     bookingsThisWeek: 'Bookings This Week',
     pendingBookings: 'Pending Bookings',
+    quotesDoneWeek: 'Quotes Done This Week',
+    quotesPending: 'Quotes Pending',
     averageRating: 'Average Rating',
     editProfile: 'Edit Profile',
     manageServices: 'Manage Services',

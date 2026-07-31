@@ -69,6 +69,8 @@ const de: TranslationSchema = {
     quickAccess: 'Schnellzugriff',
     bookingsThisWeek: 'Buchungen diese Woche',
     pendingBookings: 'Offene Buchungen',
+    quotesDoneWeek: 'Angebote diese Woche',
+    quotesPending: 'Offene Angebote',
     averageRating: 'Durchschnittsbewertung',
     editProfile: 'Profil bearbeiten',
     manageServices: 'Services verwalten',

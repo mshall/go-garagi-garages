@@ -7,10 +7,14 @@ import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined';
 import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
+import dayjs from 'dayjs';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { formatPercent } from '../../domain/format';
@@ -21,9 +25,20 @@ export function DashboardPage() {
   const { t } = useTranslation();
   const kpis = useGarageStore((s) => s.kpis);
   const garage = useGarageStore((s) => s.garage);
-  const pendingCount = useGarageStore(
-    (s) => s.bookings.filter((b) => b.status === 'pending').length,
-  );
+  const bookings = useGarageStore((s) => s.bookings);
+  const quotes = useGarageStore((s) => s.quotes);
+
+  const pendingCount = bookings.filter((b) => b.status === 'pending').length;
+  const quoteStats = useMemo(() => {
+    const weekStart = dayjs('2026-08-01').subtract(7, 'day');
+    const doneThisWeek = quotes.filter(
+      (q) =>
+        (q.status === 'responded' || q.status === 'won' || q.status === 'lost') &&
+        !dayjs(q.submittedAt).isBefore(weekStart),
+    ).length;
+    const pendingQuotes = quotes.filter((q) => q.status === 'new').length;
+    return { doneThisWeek, pendingQuotes };
+  }, [quotes]);
 
   const kpiCards = [
     {
@@ -32,6 +47,7 @@ export function DashboardPage() {
       trend: kpis.bookingsTrend,
       color: '#2563EB',
       icon: <CalendarMonthOutlinedIcon />,
+      path: '/bookings',
     },
     {
       label: t('dashboard.pendingBookings'),
@@ -39,6 +55,23 @@ export function DashboardPage() {
       trend: kpis.pendingTrend,
       color: '#DC2626',
       icon: <InboxOutlinedIcon />,
+      path: '/bookings',
+    },
+    {
+      label: t('dashboard.quotesDoneWeek'),
+      value: quoteStats.doneThisWeek,
+      trend: 8.0,
+      color: '#7C3AED',
+      icon: <CheckCircleOutlineIcon />,
+      path: '/quotes',
+    },
+    {
+      label: t('dashboard.quotesPending'),
+      value: quoteStats.pendingQuotes,
+      trend: 4.2,
+      color: '#EA580C',
+      icon: <RequestQuoteOutlinedIcon />,
+      path: '/quotes',
     },
     {
       label: t('dashboard.averageRating'),
@@ -46,6 +79,7 @@ export function DashboardPage() {
       trend: kpis.ratingTrend,
       color: '#16A34A',
       icon: <StarOutlineIcon />,
+      path: '/reviews',
     },
   ];
 
@@ -93,7 +127,7 @@ export function DashboardPage() {
         </Typography>
         <Grid container spacing={2}>
           {kpiCards.map((kpi) => (
-            <Grid key={kpi.label} size={{ xs: 12, sm: 4 }}>
+            <Grid key={kpi.label} size={{ xs: 12, sm: 6, md: 4 }}>
               <Card
                 sx={{
                   bgcolor: kpi.color,
@@ -102,31 +136,36 @@ export function DashboardPage() {
                   minHeight: 140,
                 }}
               >
-                <CardContent>
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="flex-start"
-                  >
-                    <Typography variant="body2" sx={{ opacity: 0.9, maxWidth: '75%' }}>
-                      {kpi.label}
+                <CardActionArea
+                  onClick={() => navigate(kpi.path)}
+                  sx={{ height: '100%', alignItems: 'stretch' }}
+                >
+                  <CardContent>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="flex-start"
+                    >
+                      <Typography variant="body2" sx={{ opacity: 0.9, maxWidth: '75%' }}>
+                        {kpi.label}
+                      </Typography>
+                      <Box sx={{ opacity: 0.85 }}>{kpi.icon}</Box>
+                    </Stack>
+                    <Typography variant="h3" fontWeight={800} mt={1}>
+                      {kpi.value}
                     </Typography>
-                    <Box sx={{ opacity: 0.85 }}>{kpi.icon}</Box>
-                  </Stack>
-                  <Typography variant="h3" fontWeight={800} mt={1}>
-                    {kpi.value}
-                  </Typography>
-                  <Chip
-                    size="small"
-                    label={`${kpi.trend >= 0 ? '↑' : '↓'} ${formatPercent(Math.abs(kpi.trend))}`}
-                    sx={{
-                      mt: 1.5,
-                      bgcolor: 'rgba(255,255,255,0.22)',
-                      color: '#fff',
-                      fontWeight: 700,
-                    }}
-                  />
-                </CardContent>
+                    <Chip
+                      size="small"
+                      label={`${kpi.trend >= 0 ? '↑' : '↓'} ${formatPercent(Math.abs(kpi.trend))}`}
+                      sx={{
+                        mt: 1.5,
+                        bgcolor: 'rgba(255,255,255,0.22)',
+                        color: '#fff',
+                        fontWeight: 700,
+                      }}
+                    />
+                  </CardContent>
+                </CardActionArea>
               </Card>
             </Grid>
           ))}

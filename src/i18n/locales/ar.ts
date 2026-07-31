@@ -69,6 +69,8 @@ const ar: TranslationSchema = {
     quickAccess: 'وصول سريع',
     bookingsThisWeek: 'حجوزات هذا الأسبوع',
     pendingBookings: 'حجوزات معلّقة',
+    quotesDoneWeek: 'عروض منجزة هذا الأسبوع',
+    quotesPending: 'عروض معلّقة',
     averageRating: 'متوسط التقييم',
     editProfile: 'تعديل الملف',
     manageServices: 'إدارة الخدمات',
