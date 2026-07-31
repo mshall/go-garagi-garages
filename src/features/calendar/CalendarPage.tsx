@@ -50,8 +50,8 @@ export function CalendarPage() {
   const [manageBooking, setManageBooking] = useState<Booking | null>(null);
 
   const days = useMemo(() => {
-    const base = dayjs('2026-08-03').add(weekOffset * 7, 'day');
-    return [0, 1, 2, 3].map((i) => base.add(i, 'day'));
+    const base = dayjs('2026-08-01').add(weekOffset * 7, 'day');
+    return [0, 1, 2, 3, 4].map((i) => base.add(i, 'day'));
   }, [weekOffset]);
 
   const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];

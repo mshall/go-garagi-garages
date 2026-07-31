@@ -482,7 +482,7 @@ export const useGarageStore = create<GarageState>()(
         }),
     }),
     {
-      name: 'go-garagi-garage-v4',
+      name: 'go-garagi-garage-v5',
       partialize: (s) => ({
         user: s.user,
         isAuthenticated: s.isAuthenticated,
