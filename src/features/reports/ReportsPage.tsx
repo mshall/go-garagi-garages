@@ -10,6 +10,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import {
   SimpleBarChart,
   SimpleHorizontalBars,
@@ -21,6 +22,8 @@ import { useGarageStore } from '../../store/useGarageStore';
 type PeriodPreset = '7d' | '30d' | '90d' | 'custom';
 
 export function ReportsPage() {
+  const { t } = useTranslation();
+  const garage = useGarageStore((s) => s.garage);
   const bookings = useGarageStore((s) => s.bookings);
   const quotes = useGarageStore((s) => s.quotes);
   const payouts = useGarageStore((s) => s.payouts);
@@ -64,38 +67,38 @@ export function ReportsPage() {
     Math.max(filteredReviews.length, 1);
 
   const metrics = [
-    { label: 'Completed jobs', value: String(completed) },
-    { label: 'Confirmed bookings', value: String(confirmed) },
-    { label: 'Pending bookings', value: String(pending) },
-    { label: 'Quotes won', value: String(wonQuotes) },
+    { label: t('reports.completedJobs'), value: String(completed) },
+    { label: t('reports.confirmedBookings'), value: String(confirmed) },
+    { label: t('reports.pendingBookings'), value: String(pending) },
+    { label: t('reports.quotesWon'), value: String(wonQuotes) },
     {
-      label: 'Quote win rate',
+      label: t('reports.quoteWinRate'),
       value: `${Math.round(
         (wonQuotes / Math.max(filteredQuotes.filter((q) => q.status !== 'new').length, 1)) *
           100,
       )}%`,
     },
-    { label: 'GMV (gross)', value: formatAed(gmv) },
-    { label: 'Net earnings', value: formatAed(net) },
+    { label: t('reports.gmv'), value: formatAed(gmv) },
+    { label: t('reports.netEarnings'), value: formatAed(net) },
     {
-      label: 'Avg. review score',
+      label: t('reports.avgReview'),
       value: filteredReviews.length ? avgRating.toFixed(1) : '—',
     },
   ];
 
   const bookingStatusChart = [
-    { label: 'Pending', value: pending, color: '#F59E0B' },
-    { label: 'Confirmed', value: confirmed, color: '#2563EB' },
-    { label: 'Completed', value: completed, color: '#16A34A' },
-    { label: 'Rejected', value: rejected, color: '#DC2626' },
+    { label: t('status.booking.pending'), value: pending, color: '#F59E0B' },
+    { label: t('status.booking.confirmed'), value: confirmed, color: '#2563EB' },
+    { label: t('status.booking.completed'), value: completed, color: '#16A34A' },
+    { label: t('status.booking.rejected'), value: rejected, color: '#DC2626' },
   ];
 
   const quoteStatusChart = [
-    { label: 'New', value: newQuotes, color: '#F97316' },
-    { label: 'Responded', value: respondedQuotes, color: '#6366F1' },
-    { label: 'Won', value: wonQuotes, color: '#16A34A' },
+    { label: t('status.quote.new'), value: newQuotes, color: '#F97316' },
+    { label: t('status.quote.responded'), value: respondedQuotes, color: '#6366F1' },
+    { label: t('status.quote.won'), value: wonQuotes, color: '#16A34A' },
     {
-      label: 'Lost',
+      label: t('status.quote.lost'),
       value: filteredQuotes.filter((q) => q.status === 'lost').length,
       color: '#94A3B8',
     },
@@ -142,29 +145,31 @@ export function ReportsPage() {
       <Card>
         <CardContent>
           <Stack spacing={1.5}>
-            <Typography fontWeight={700}>Report time range</Typography>
+            <Typography fontWeight={700}>{t('reports.timeRange')}</Typography>
             <Typography variant="body2" color="text.secondary">
-              Marketplace performance for Al Quoz Auto Care ·{' '}
-              {range.start.format('D MMM YYYY')} – {range.end.format('D MMM YYYY')}
+              {t('reports.marketplaceFor', {
+                name: garage.name,
+                range: `${range.start.format('D MMM YYYY')} – ${range.end.format('D MMM YYYY')}`,
+              })}
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
               <FormControl fullWidth size="small">
-                <InputLabel>Period</InputLabel>
+                <InputLabel>{t('reports.period')}</InputLabel>
                 <Select
-                  label="Period"
+                  label={t('reports.period')}
                   value={period}
                   onChange={(e) => setPeriod(e.target.value as PeriodPreset)}
                 >
-                  <MenuItem value="7d">Last 7 days</MenuItem>
-                  <MenuItem value="30d">Last 30 days</MenuItem>
-                  <MenuItem value="90d">Last 90 days</MenuItem>
-                  <MenuItem value="custom">Custom range</MenuItem>
+                  <MenuItem value="7d">{t('reports.last7')}</MenuItem>
+                  <MenuItem value="30d">{t('reports.last30')}</MenuItem>
+                  <MenuItem value="90d">{t('reports.last90')}</MenuItem>
+                  <MenuItem value="custom">{t('reports.customRange')}</MenuItem>
                 </Select>
               </FormControl>
               {period === 'custom' && (
                 <>
                   <TextField
-                    label="From"
+                    label={t('common.from')}
                     type="date"
                     size="small"
                     fullWidth
@@ -173,7 +178,7 @@ export function ReportsPage() {
                     slotProps={{ inputLabel: { shrink: true } }}
                   />
                   <TextField
-                    label="To"
+                    label={t('common.to')}
                     type="date"
                     size="small"
                     fullWidth
@@ -210,7 +215,7 @@ export function ReportsPage() {
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Typography fontWeight={700} gutterBottom>
-                Bookings by status
+                {t('reports.bookingsByStatus')}
               </Typography>
               <SimpleBarChart data={bookingStatusChart} />
             </CardContent>
@@ -220,7 +225,7 @@ export function ReportsPage() {
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Typography fontWeight={700} gutterBottom>
-                Quotes by status
+                {t('reports.quotesByStatus')}
               </Typography>
               <SimpleBarChart data={quoteStatusChart} />
             </CardContent>
@@ -230,7 +235,7 @@ export function ReportsPage() {
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Typography fontWeight={700} gutterBottom>
-                Net earnings trend
+                {t('reports.earningsTrend')}
               </Typography>
               <SimpleLineChart data={earningsTrend} color="#0EA5E9" />
             </CardContent>
@@ -240,7 +245,7 @@ export function ReportsPage() {
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Typography fontWeight={700} gutterBottom>
-                Review rating distribution
+                {t('reports.ratingDistribution')}
               </Typography>
               <SimpleBarChart data={ratingDistribution} height={160} />
             </CardContent>
@@ -250,13 +255,13 @@ export function ReportsPage() {
           <Card>
             <CardContent>
               <Typography fontWeight={700} gutterBottom>
-                Demand by service type
+                {t('reports.demandByService')}
               </Typography>
               {demandByService.length > 0 ? (
                 <SimpleHorizontalBars data={demandByService} />
               ) : (
                 <Typography color="text.secondary">
-                  No bookings in this time range.
+                  {t('reports.noBookings')}
                 </Typography>
               )}
             </CardContent>

@@ -14,6 +14,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { CustomerNoticeText } from '../../components/CustomerNoticeText';
 import { BookingStatusChip } from '../../components/StatusChip';
 import type { Booking, BookingStatus } from '../../domain/types';
 import { useGarageStore } from '../../store/useGarageStore';
@@ -96,11 +97,9 @@ export function BookingInboxPage() {
 
               {booking.proposedAt && (
                 <Alert severity="info" sx={{ mt: 1.5 }}>
-                  Suggested time:{' '}
-                  <strong>
-                    {dayjs(booking.proposedAt).format('ddd D MMM · h:mm A')}
-                  </strong>
-                  . Waiting for customer confirmation.
+                  {t('bookings.suggestedTime', {
+                    time: dayjs(booking.proposedAt).format('ddd D MMM · h:mm A'),
+                  })}
                 </Alert>
               )}
 
@@ -110,15 +109,15 @@ export function BookingInboxPage() {
                   icon={<WarningAmberIcon fontSize="inherit" />}
                   sx={{ mt: 1.5 }}
                 >
-                  Conflicts with{' '}
-                  {conflicts.map((c) => c.customerName).join(', ')} at this time.
-                  Confirm carefully or suggest another slot.
+                  {t('bookings.conflictAlert', {
+                    names: conflicts.map((c) => c.customerName).join(', '),
+                  })}
                 </Alert>
               )}
 
               {booking.lastCustomerNotice && (
                 <Typography variant="caption" color="text.secondary" display="block" mt={1}>
-                  {booking.lastCustomerNotice}
+                  <CustomerNoticeText notice={booking.lastCustomerNotice} />
                 </Typography>
               )}
 
@@ -129,7 +128,7 @@ export function BookingInboxPage() {
                     fullWidth
                     onClick={() => setConfirmTarget(booking)}
                   >
-                    Review & confirm
+                    {t('bookings.reviewConfirm')}
                   </Button>
                   <Button
                     variant="outlined"
@@ -149,14 +148,14 @@ export function BookingInboxPage() {
                     fullWidth
                     onClick={() => setConfirmTarget(booking)}
                   >
-                    Change suggestion
+                    {t('bookings.changeSuggestion')}
                   </Button>
                   <Button
                     variant="contained"
                     fullWidth
                     onClick={() => customerConfirmProposedTime(booking.id)}
                   >
-                    Simulate customer OK
+                    {t('bookings.simulateCustomerOk')}
                   </Button>
                 </Stack>
               )}
@@ -168,13 +167,13 @@ export function BookingInboxPage() {
                   fullWidth
                   onClick={() => navigate('/calendar')}
                 >
-                  View on calendar
+                  {t('bookings.viewOnCalendar')}
                 </Button>
               )}
 
               {booking.rejectionReason && (
                 <Typography variant="caption" color="error" display="block" mt={1}>
-                  Reason: {booking.rejectionReason}
+                  {t('bookings.reason', { reason: booking.rejectionReason })}
                 </Typography>
               )}
             </Box>
@@ -194,7 +193,7 @@ export function BookingInboxPage() {
         sx={{ borderBottom: 1, borderColor: 'divider' }}
       >
         <Tab label={t('bookings.pending')} value="pending" />
-        <Tab label="Awaiting customer" value="awaiting_customer" />
+        <Tab label={t('bookings.awaitingCustomer')} value="awaiting_customer" />
         <Tab label={t('bookings.confirmed')} value="confirmed" />
         <Tab label={t('bookings.rejected')} value="rejected" />
       </Tabs>
@@ -224,7 +223,7 @@ export function BookingInboxPage() {
               {t('bookings.empty', {
                 status:
                   tab === 'awaiting_customer'
-                    ? 'Awaiting customer'
+                    ? t('bookings.awaitingCustomer')
                     : t(`bookings.${tab}`),
               })}
             </Typography>

@@ -22,11 +22,13 @@ import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import PercentOutlinedIcon from '@mui/icons-material/PercentOutlined';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import { formatAed } from '../../domain/format';
 import type { DiscountType } from '../../domain/types';
 import { useGarageStore } from '../../store/useGarageStore';
 
 export function PromotionsPage() {
+  const { t } = useTranslation();
   const promotions = useGarageStore((s) => s.promotions);
   const services = useGarageStore((s) => s.services);
   const addPromotion = useGarageStore((s) => s.addPromotion);
@@ -51,13 +53,13 @@ export function PromotionsPage() {
             <CardContent>
               <LocalOfferOutlinedIcon color="primary" />
               <Typography variant="subtitle2" mt={1}>
-                Active Promotions
+                {t('promotions.active')}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Currently running
+                {t('promotions.currentlyRunning')}
               </Typography>
               <Typography variant="body2" color="success.main" fontWeight={700} mt={0.5}>
-                +{promotions.length} this month
+                {t('promotions.thisMonth', { count: promotions.length })}
               </Typography>
             </CardContent>
           </Card>
@@ -67,13 +69,13 @@ export function PromotionsPage() {
             <CardContent>
               <PercentOutlinedIcon color="primary" />
               <Typography variant="subtitle2" mt={1}>
-                Avg. Discount Value
+                {t('promotions.avgDiscount')}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Across all services
+                {t('promotions.acrossServices')}
               </Typography>
               <Typography variant="body2" fontWeight={700} mt={0.5}>
-                {avgDiscount.toFixed(0)} · Stable
+                {t('promotions.stable', { value: avgDiscount.toFixed(0) })}
               </Typography>
             </CardContent>
           </Card>
@@ -94,15 +96,15 @@ export function PromotionsPage() {
                       size="small"
                       label={
                         p.discountType === 'percentage'
-                          ? 'Percentage Discount'
-                          : 'Fixed Discount'
+                          ? t('promotions.percentageDiscount')
+                          : t('promotions.fixedDiscount')
                       }
                       sx={{ width: 'fit-content', bgcolor: '#FCE7F3' }}
                     />
                     <Typography fontWeight={600} color="primary">
                       {p.discountType === 'percentage'
-                        ? `${p.value}% Discount`
-                        : `${formatAed(p.value)} Discount`}
+                        ? t('promotions.percentOff', { value: p.value })
+                        : t('promotions.fixedOff', { value: formatAed(p.value) })}
                     </Typography>
                     <Stack direction="row" spacing={0.5} alignItems="center">
                       <CalendarTodayOutlinedIcon sx={{ fontSize: 14 }} color="action" />
@@ -113,12 +115,12 @@ export function PromotionsPage() {
                     </Stack>
                     {svc && (
                       <Typography variant="caption" color="text.secondary">
-                        Service: {svc.name}
+                        {t('promotions.serviceLabel', { name: svc.name })}
                       </Typography>
                     )}
                     <Stack direction="row" spacing={1} pt={1}>
                       <Button size="small" variant="outlined">
-                        Edit
+                        {t('common.edit')}
                       </Button>
                       <Button
                         size="small"
@@ -126,7 +128,7 @@ export function PromotionsPage() {
                         color="error"
                         onClick={() => deletePromotion(p.id)}
                       >
-                        Delete
+                        {t('common.delete')}
                       </Button>
                     </Stack>
                   </Stack>
@@ -144,17 +146,17 @@ export function PromotionsPage() {
         startIcon={<LocalOfferOutlinedIcon />}
         onClick={() => setOpen(true)}
       >
-        Add Promotion
+        {t('promotions.add')}
       </Button>
 
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Add New Promotion</DialogTitle>
+        <DialogTitle>{t('promotions.addTitle')}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
             <FormControl fullWidth>
-              <InputLabel>Select Service</InputLabel>
+              <InputLabel>{t('promotions.selectService')}</InputLabel>
               <Select
-                label="Select Service"
+                label={t('promotions.selectService')}
                 value={serviceId}
                 onChange={(e) => setServiceId(e.target.value)}
               >
@@ -173,16 +175,16 @@ export function PromotionsPage() {
               <FormControlLabel
                 value="percentage"
                 control={<Radio />}
-                label="Percentage (%)"
+                label={t('promotions.percentage')}
               />
               <FormControlLabel
                 value="fixed"
                 control={<Radio />}
-                label="Fixed (AED)"
+                label={t('promotions.fixedAed')}
               />
             </RadioGroup>
             <TextField
-              label="Discount Value"
+              label={t('promotions.discountValue')}
               type="number"
               value={value}
               onChange={(e) => setValue(e.target.value)}
@@ -190,7 +192,7 @@ export function PromotionsPage() {
             />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField
-                label="Start Date"
+                label={t('promotions.startDate')}
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
@@ -198,7 +200,7 @@ export function PromotionsPage() {
                 slotProps={{ inputLabel: { shrink: true } }}
               />
               <TextField
-                label="End Date"
+                label={t('promotions.endDate')}
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
@@ -209,13 +211,13 @@ export function PromotionsPage() {
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={() => setOpen(false)}>{t('common.cancel')}</Button>
           <Button
             variant="contained"
             onClick={() => {
               const svc = services.find((s) => s.id === serviceId);
               addPromotion({
-                title: svc?.name ?? 'Promotion',
+                title: svc?.name ?? t('promotions.fallbackTitle'),
                 serviceId,
                 discountType,
                 value: Number(value),
@@ -226,7 +228,7 @@ export function PromotionsPage() {
               setOpen(false);
             }}
           >
-            Save Promotion
+            {t('promotions.save')}
           </Button>
         </DialogActions>
       </Dialog>

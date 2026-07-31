@@ -15,13 +15,14 @@ import Typography from '@mui/material/Typography';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined';
+import { useTranslation } from 'react-i18next';
 import { formatAed, formatDuration } from '../../domain/format';
 import type { ServiceOffering } from '../../domain/types';
 import { useGarageStore } from '../../store/useGarageStore';
 
 const emptyForm = {
   name: '',
-  category: 'General Maintenance',
+  category: '',
   durationMinutes: 60,
   priceAed: 100,
   compareAtAed: undefined as number | undefined,
@@ -29,6 +30,7 @@ const emptyForm = {
 };
 
 export function ServicesPage() {
+  const { t } = useTranslation();
   const services = useGarageStore((s) => s.services);
   const addService = useGarageStore((s) => s.addService);
   const updateService = useGarageStore((s) => s.updateService);
@@ -39,7 +41,7 @@ export function ServicesPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, category: t('services.defaultCategory') });
     setOpen(true);
   };
 
@@ -65,13 +67,13 @@ export function ServicesPage() {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h6">Your Service Offerings</Typography>
+      <Typography variant="h6">{t('services.yourOfferings')}</Typography>
       <Button variant="contained" size="large" fullWidth onClick={openCreate}>
-        + Add New Service
+        {t('services.addNew')}
       </Button>
 
       <Typography variant="subtitle2" color="text.secondary">
-        List of Services
+        {t('services.list')}
       </Typography>
 
       <Stack spacing={1.5}>
@@ -108,7 +110,7 @@ export function ServicesPage() {
                     <IconButton
                       size="small"
                       onClick={() => openEdit(svc)}
-                      aria-label="Edit service"
+                      aria-label={t('services.editAria')}
                     >
                       <EditOutlinedIcon fontSize="small" />
                     </IconButton>
@@ -116,7 +118,7 @@ export function ServicesPage() {
                       size="small"
                       color="error"
                       onClick={() => deleteService(svc.id)}
-                      aria-label="Delete service"
+                      aria-label={t('services.deleteAria')}
                     >
                       <DeleteOutlineIcon fontSize="small" />
                     </IconButton>
@@ -129,23 +131,23 @@ export function ServicesPage() {
       </Stack>
 
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{editing ? 'Edit Service' : 'Add New Service'}</DialogTitle>
+        <DialogTitle>{editing ? t('services.editTitle') : t('services.addTitle')}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
             <TextField
-              label="Service Name"
+              label={t('services.name')}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               fullWidth
             />
             <TextField
-              label="Category"
+              label={t('services.category')}
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
               fullWidth
             />
             <TextField
-              label="Duration (minutes)"
+              label={t('services.durationMinutes')}
               type="number"
               value={form.durationMinutes}
               onChange={(e) =>
@@ -154,7 +156,7 @@ export function ServicesPage() {
               fullWidth
             />
             <TextField
-              label="Price (AED)"
+              label={t('services.priceAed')}
               type="number"
               value={form.priceAed}
               onChange={(e) =>
@@ -165,9 +167,9 @@ export function ServicesPage() {
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={() => setOpen(false)}>{t('common.cancel')}</Button>
           <Button variant="contained" onClick={save}>
-            Save
+            {t('common.save')}
           </Button>
         </DialogActions>
       </Dialog>

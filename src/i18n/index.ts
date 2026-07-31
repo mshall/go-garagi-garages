@@ -1,3 +1,9 @@
+import dayjs from 'dayjs';
+import 'dayjs/locale/ar';
+import 'dayjs/locale/de';
+import 'dayjs/locale/es';
+import 'dayjs/locale/fr';
+import 'dayjs/locale/ru';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import ar from './locales/ar';
@@ -6,6 +12,19 @@ import en from './locales/en';
 import es from './locales/es';
 import fr from './locales/fr';
 import ru from './locales/ru';
+
+const DAYJS_LOCALES: Record<string, string> = {
+  en: 'en',
+  ar: 'ar',
+  es: 'es',
+  fr: 'fr',
+  ru: 'ru',
+  de: 'de',
+};
+
+function syncDayjsLocale(lang: string) {
+  dayjs.locale(DAYJS_LOCALES[lang] ?? 'en');
+}
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'en', dir: 'ltr' as const },
@@ -27,6 +46,9 @@ const stored =
     ? localStorage.getItem('go-garagi-lang')
     : null;
 
+const initialLng =
+  stored && SUPPORTED_LANGUAGES.some((l) => l.code === stored) ? stored : 'en';
+
 void i18n.use(initReactI18next).init({
   resources: {
     en: { translation: en },
@@ -36,14 +58,17 @@ void i18n.use(initReactI18next).init({
     ru: { translation: ru },
     de: { translation: de },
   },
-  lng: stored && SUPPORTED_LANGUAGES.some((l) => l.code === stored) ? stored : 'en',
+  lng: initialLng,
   fallbackLng: 'en',
   interpolation: { escapeValue: false },
 });
 
+syncDayjsLocale(initialLng);
+
 export async function setAppLanguage(lang: AppLanguage) {
   localStorage.setItem('go-garagi-lang', lang);
   await i18n.changeLanguage(lang);
+  syncDayjsLocale(lang);
   document.documentElement.lang = lang;
   document.documentElement.dir = isRtlLanguage(lang) ? 'rtl' : 'ltr';
 }

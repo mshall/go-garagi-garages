@@ -303,8 +303,10 @@ export const SEED_BOOKINGS: Booking[] = [
     status: 'awaiting_customer',
     vehicle: '2020 Nissan Kicks',
     notifyCustomerPending: true,
-    lastCustomerNotice:
-      'Suggested new time: 4 Aug 2026, 3:00 PM. Waiting for customer confirmation.',
+    lastCustomerNotice: {
+      kind: 'suggested',
+      at: '2026-08-04T15:00:00+04:00',
+    },
   },
   {
     id: 'GG-87686',
@@ -316,8 +318,10 @@ export const SEED_BOOKINGS: Booking[] = [
     status: 'awaiting_customer',
     vehicle: '2017 Hyundai Sonata',
     notifyCustomerPending: true,
-    lastCustomerNotice:
-      'Suggested new time: 6 Aug 2026, 1:00 PM. Waiting for customer confirmation.',
+    lastCustomerNotice: {
+      kind: 'suggested',
+      at: '2026-08-06T13:00:00+04:00',
+    },
   },
 
   // —— More pending / confirmed across the week ——

@@ -115,7 +115,7 @@ export function DashboardPage() {
         <Typography variant="h5">{garage.name}</Typography>
         <Chip
           size="small"
-          label={garage.status === 'live' ? 'Live' : garage.status}
+          label={t(`status.garage.${garage.status}`)}
           color={garage.status === 'live' ? 'success' : 'warning'}
           sx={{ mt: 1 }}
         />

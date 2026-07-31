@@ -5,11 +5,13 @@ import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useGarageStore } from '../../store/useGarageStore';
 
 export function ProfilePage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const garage = useGarageStore((s) => s.garage);
   const user = useGarageStore((s) => s.user);
   const logout = useGarageStore((s) => s.logout);
@@ -24,9 +26,9 @@ export function ProfilePage() {
             <Typography variant="h5">{garage.name}</Typography>
             <Chip
               size="small"
-              label={garage.status}
+              label={t(`status.garage.${garage.status}`)}
               color={garage.status === 'live' ? 'success' : 'warning'}
-              sx={{ width: 'fit-content', textTransform: 'capitalize' }}
+              sx={{ width: 'fit-content' }}
             />
             <Typography variant="body2" color="text.secondary">
               {garage.description}
@@ -38,14 +40,14 @@ export function ProfilePage() {
       <Card>
         <CardContent>
           <Typography fontWeight={700} mb={1.5}>
-            Contact & location
+            {t('profile.contactLocation')}
           </Typography>
           <Stack spacing={1}>
-            <Row label="Owner" value={garage.ownerName} />
-            <Row label="WhatsApp" value={garage.whatsapp} />
-            <Row label="Phone" value={garage.phone || '—'} />
-            <Row label="Email" value={garage.email || user?.email || '—'} />
-            <Row label="Address" value={`${garage.address}, ${garage.city}`} />
+            <Row label={t('profile.owner')} value={garage.ownerName} />
+            <Row label={t('profile.whatsapp')} value={garage.whatsapp} />
+            <Row label={t('profile.phone')} value={garage.phone || '—'} />
+            <Row label={t('profile.email')} value={garage.email || user?.email || '—'} />
+            <Row label={t('profile.address')} value={`${garage.address}, ${garage.city}`} />
           </Stack>
         </CardContent>
       </Card>
@@ -53,7 +55,7 @@ export function ProfilePage() {
       <Card>
         <CardContent>
           <Typography fontWeight={700} mb={1.5}>
-            Insurer networks
+            {t('profile.insurerNetworks')}
           </Typography>
           <Stack direction="row" flexWrap="wrap" gap={1}>
             {garage.insurers.map((ins) => (
@@ -66,14 +68,14 @@ export function ProfilePage() {
       <Card>
         <CardContent>
           <Typography fontWeight={700} mb={1.5}>
-            Operating hours
+            {t('profile.operatingHours')}
           </Typography>
           <Stack spacing={0.75}>
             {garage.hours.map((h) => (
               <Stack key={h.day} direction="row" justifyContent="space-between">
-                <Typography variant="body2">{h.day}</Typography>
+                <Typography variant="body2">{t(`days.${h.day}`)}</Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {h.open ? `${h.start} – ${h.end}` : 'Closed'}
+                  {h.open ? `${h.start} – ${h.end}` : t('common.closed')}
                 </Typography>
               </Stack>
             ))}
@@ -84,26 +86,26 @@ export function ProfilePage() {
       <Card>
         <CardContent>
           <Typography fontWeight={700} mb={1}>
-            Catalog services selected
+            {t('profile.catalogSelected')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {selectedCatalogIds.length} service categories enabled
+            {t('profile.categoriesEnabled', { count: selectedCatalogIds.length })}
           </Typography>
         </CardContent>
       </Card>
 
       <Button variant="contained" size="large" onClick={() => navigate('/profile/edit')}>
-        Edit Garage Profile
+        {t('profile.editGarage')}
       </Button>
       <Button variant="outlined" onClick={() => navigate('/promotions')}>
-        Promotions Manager
+        {t('profile.promotionsManager')}
       </Button>
       <Button variant="outlined" onClick={() => navigate('/onboarding')}>
-        Re-run Onboarding
+        {t('profile.rerunOnboarding')}
       </Button>
       <Divider />
       <Button variant="outlined" color="secondary" onClick={() => resetDemoData()}>
-        Reset Demo Data
+        {t('profile.resetDemo')}
       </Button>
       <Button
         variant="text"
@@ -113,7 +115,7 @@ export function ProfilePage() {
           navigate('/login');
         }}
       >
-        Sign out
+        {t('common.signOut')}
       </Button>
     </Stack>
   );

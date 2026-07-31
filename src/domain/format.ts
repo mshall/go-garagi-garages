@@ -1,7 +1,22 @@
-/** Locale-safe formatters — shared with future RN app */
+/** Locale-aware formatters — shared with future RN app */
+
+import i18n from '../i18n';
 
 export function formatAed(amount: number): string {
-  return new Intl.NumberFormat('en-AE', {
+  const lang = i18n.language || 'en';
+  const locale =
+    lang === 'ar'
+      ? 'ar-AE'
+      : lang === 'es'
+        ? 'es'
+        : lang === 'fr'
+          ? 'fr'
+          : lang === 'ru'
+            ? 'ru'
+            : lang === 'de'
+              ? 'de'
+              : 'en-AE';
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'AED',
     minimumFractionDigits: 0,
@@ -10,11 +25,15 @@ export function formatAed(amount: number): string {
 }
 
 export function formatDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes} minutes`;
+  if (minutes < 60) return i18n.t('format.minutes', { count: minutes });
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  if (m === 0) return h === 1 ? '1 hour' : `${h} hours`;
-  return `${h} hour${h > 1 ? 's' : ''} ${m} minutes`;
+  if (m === 0) {
+    return h === 1 ? i18n.t('format.hour') : i18n.t('format.hours', { count: h });
+  }
+  return h === 1
+    ? i18n.t('format.hourMinutes', { minutes: m })
+    : i18n.t('format.hoursMinutes', { hours: h, minutes: m });
 }
 
 export function formatPercent(value: number): string {

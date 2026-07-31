@@ -11,22 +11,40 @@ import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useGarageStore } from '../../store/useGarageStore';
 
 export function PendingApprovalPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const garage = useGarageStore((s) => s.garage);
   const setGarageStatus = useGarageStore((s) => s.setGarageStatus);
 
   const rows = [
-    { icon: <PersonOutlineIcon fontSize="small" />, label: 'Garage Name', value: garage.name },
-    { icon: <PlaceOutlinedIcon fontSize="small" />, label: 'Address', value: garage.address },
-    { icon: <EmailOutlinedIcon fontSize="small" />, label: 'Email', value: garage.email || '—' },
-    { icon: <PhoneOutlinedIcon fontSize="small" />, label: 'Phone', value: garage.whatsapp },
+    {
+      icon: <PersonOutlineIcon fontSize="small" />,
+      label: t('pending.garageName'),
+      value: garage.name,
+    },
+    {
+      icon: <PlaceOutlinedIcon fontSize="small" />,
+      label: t('pending.address'),
+      value: garage.address,
+    },
+    {
+      icon: <EmailOutlinedIcon fontSize="small" />,
+      label: t('pending.email'),
+      value: garage.email || '—',
+    },
+    {
+      icon: <PhoneOutlinedIcon fontSize="small" />,
+      label: t('pending.phone'),
+      value: garage.whatsapp,
+    },
     {
       icon: <CalendarTodayOutlinedIcon fontSize="small" />,
-      label: 'Submitted On',
+      label: t('pending.submittedOn'),
       value: garage.submittedOn || '—',
     },
   ];
@@ -45,16 +63,16 @@ export function PendingApprovalPage() {
     >
       <Box sx={{ width: '100%', maxWidth: 520 }}>
         <Typography variant="h5" textAlign="center" gutterBottom>
-          Thanks for submitting your garage!
+          {t('pending.thanks')}
         </Typography>
         <Typography variant="body2" color="text.secondary" textAlign="center" mb={2}>
-          We&apos;re reviewing your application. You&apos;ll be notified once it&apos;s approved.
+          {t('pending.reviewing')}
         </Typography>
 
         <Stack alignItems="center" spacing={2} mb={3}>
           <Chip
             icon={<HourglassEmptyIcon />}
-            label="Pending Approval"
+            label={t('pending.pendingApproval')}
             sx={{ bgcolor: '#FFEDD5', color: '#C2410C', fontWeight: 700 }}
           />
           <HourglassEmptyIcon sx={{ fontSize: 96, color: 'primary.light' }} />
@@ -65,7 +83,7 @@ export function PendingApprovalPage() {
             <Stack direction="row" spacing={1} alignItems="center" mb={2}>
               <PersonOutlineIcon color="primary" />
               <Typography fontWeight={700} color="primary">
-                Submitted Garage Details
+                {t('pending.submittedDetails')}
               </Typography>
             </Stack>
             <Stack spacing={1.5}>
@@ -102,10 +120,10 @@ export function PendingApprovalPage() {
               navigate('/');
             }}
           >
-            Simulate Admin Approval
+            {t('pending.simulateApproval')}
           </Button>
           <Button variant="text" fullWidth onClick={() => navigate('/login')}>
-            Back to login
+            {t('pending.backToLogin')}
           </Button>
         </Stack>
       </Box>

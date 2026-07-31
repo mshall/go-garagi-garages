@@ -23,6 +23,7 @@ import BrushOutlinedIcon from '@mui/icons-material/BrushOutlined';
 import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined';
 import LocalCarWashOutlinedIcon from '@mui/icons-material/LocalCarWashOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { CATALOG_SERVICES } from '../../data/seed';
 import { useGarageStore } from '../../store/useGarageStore';
@@ -55,6 +56,7 @@ const defaultHours: OperatingHours[] = [
 
 export function OnboardingPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const completeOnboarding = useGarageStore((s) => s.completeOnboarding);
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
@@ -113,46 +115,52 @@ export function OnboardingPage() {
     >
       <Box sx={{ maxWidth: 640, mx: 'auto', px: 2, pt: 3 }}>
         <Typography variant="h5" gutterBottom>
-          {step === 0 ? 'Register Your Garage' : 'What Services Do You Offer?'}
+          {step === 0 ? t('onboarding.registerTitle') : t('onboarding.servicesTitle')}
         </Typography>
         <Typography variant="body2" color="text.secondary" mb={2}>
-          Step {step + 1} of 2 — {step === 0 ? 'Business details' : 'Services catalog'}
+          {t('onboarding.stepOf', {
+            step: step + 1,
+            label:
+              step === 0
+                ? t('onboarding.businessDetails')
+                : t('onboarding.servicesCatalog'),
+          })}
         </Typography>
 
         {step === 0 && (
           <Stack spacing={2.5}>
             <TextField
-              label="Garage Name"
-              placeholder="Enter your garage's official name"
+              label={t('onboarding.garageName')}
+              placeholder={t('onboarding.garageNamePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               fullWidth
               required
             />
             <TextField
-              label="Owner Name"
-              placeholder="Full name of the garage owner"
+              label={t('onboarding.ownerName')}
+              placeholder={t('onboarding.ownerNamePlaceholder')}
               value={ownerName}
               onChange={(e) => setOwnerName(e.target.value)}
               fullWidth
               required
             />
             <TextField
-              label="WhatsApp Number (Required)"
-              placeholder="e.g., +971 50 123 4567"
+              label={t('onboarding.whatsapp')}
+              placeholder={t('onboarding.whatsappPlaceholder')}
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
               fullWidth
               required
             />
             <TextField
-              label="Phone Number (Optional)"
+              label={t('onboarding.phone')}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               fullWidth
             />
             <TextField
-              label="Email Address (Optional)"
+              label={t('onboarding.email')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               fullWidth
@@ -170,17 +178,19 @@ export function OnboardingPage() {
               <CardContent sx={{ textAlign: 'center', py: 3 }}>
                 <CloudUploadOutlinedIcon color="primary" sx={{ fontSize: 36, mb: 1 }} />
                 <Typography fontWeight={600}>
-                  {licenseUploaded ? 'Trade license uploaded' : 'Upload Trade License'}
+                  {licenseUploaded
+                    ? t('onboarding.licenseUploaded')
+                    : t('onboarding.uploadLicense')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Drag & drop or click to upload (PDF or image)
+                  {t('onboarding.dragDrop')}
                 </Typography>
               </CardContent>
             </Card>
 
             <TextField
-              label="Garage Description"
-              placeholder="Tell us more about your garage, services, and specialties."
+              label={t('onboarding.description')}
+              placeholder={t('onboarding.descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               fullWidth
@@ -193,16 +203,16 @@ export function OnboardingPage() {
                 <Stack direction="row" spacing={1.5} alignItems="center">
                   <PlaceOutlinedIcon color="primary" />
                   <Box flex={1}>
-                    <Typography fontWeight={600}>Pin Garage Location</Typography>
+                    <Typography fontWeight={600}>{t('onboarding.pinLocation')}</Typography>
                     <Typography variant="body2" color="text.secondary">
                       {address}
                     </Typography>
                   </Box>
-                  <Chip label="Pinned" color="primary" size="small" />
+                  <Chip label={t('onboarding.pinned')} color="primary" size="small" />
                 </Stack>
                 <TextField
                   sx={{ mt: 2 }}
-                  label="Address"
+                  label={t('onboarding.address')}
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   fullWidth
@@ -210,7 +220,7 @@ export function OnboardingPage() {
               </CardContent>
             </Card>
 
-            <Typography variant="subtitle1">Set Working Hours (Mon–Sun)</Typography>
+            <Typography variant="subtitle1">{t('onboarding.setHours')}</Typography>
             <Stack spacing={1}>
               {hours.map((h, idx) => (
                 <Card key={h.day}>
@@ -231,7 +241,7 @@ export function OnboardingPage() {
                             }}
                           />
                         }
-                        label={h.day}
+                        label={t(`days.${h.day}`)}
                         sx={{ minWidth: 140 }}
                       />
                       {h.open ? (
@@ -260,7 +270,7 @@ export function OnboardingPage() {
                           />
                         </Stack>
                       ) : (
-                        <Chip label="Closed" size="small" />
+                        <Chip label={t('onboarding.closed')} size="small" />
                       )}
                     </Stack>
                   </CardContent>
@@ -275,7 +285,7 @@ export function OnboardingPage() {
               disabled={!canNext}
               onClick={() => setStep(1)}
             >
-              Next
+              {t('onboarding.next')}
             </Button>
           </Stack>
         )}
@@ -309,7 +319,7 @@ export function OnboardingPage() {
             })}
             <Stack direction="row" spacing={1} pt={1}>
               <Button variant="outlined" fullWidth onClick={() => setStep(0)}>
-                Back
+                {t('onboarding.back')}
               </Button>
               <Button
                 variant="contained"
@@ -319,7 +329,7 @@ export function OnboardingPage() {
                 onClick={submit}
                 sx={{ bgcolor: '#EA580C', '&:hover': { bgcolor: '#C2410C' } }}
               >
-                Submit Registration
+                {t('onboarding.submit')}
               </Button>
             </Stack>
           </Stack>

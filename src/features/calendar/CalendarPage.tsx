@@ -12,6 +12,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import { bookingSlotParts } from '../../domain/availability';
 import type { Booking, SlotStatus } from '../../domain/types';
 import { useGarageStore } from '../../store/useGarageStore';
@@ -21,14 +22,11 @@ import {
   ConflictResolveDialog,
 } from '../scheduling/SchedulingDialogs';
 
-const statusStyles: Record<
-  SlotStatus,
-  { bgcolor: string; color: string; label: string }
-> = {
-  available: { bgcolor: '#F8FAFC', color: '#64748B', label: 'Available' },
-  booked: { bgcolor: '#16A34A', color: '#fff', label: 'Booked' },
-  blocked: { bgcolor: '#F97316', color: '#fff', label: 'Blocked' },
-  conflict: { bgcolor: '#FEF3C7', color: '#B45309', label: 'Conflict' },
+const statusStyles: Record<SlotStatus, { bgcolor: string; color: string }> = {
+  available: { bgcolor: '#F8FAFC', color: '#64748B' },
+  booked: { bgcolor: '#16A34A', color: '#fff' },
+  blocked: { bgcolor: '#F97316', color: '#fff' },
+  conflict: { bgcolor: '#FEF3C7', color: '#B45309' },
 };
 
 function formatHour(hour: number) {
@@ -36,6 +34,7 @@ function formatHour(hour: number) {
 }
 
 export function CalendarPage() {
+  const { t } = useTranslation();
   const slots = useGarageStore((s) => s.slots);
   const bookings = useGarageStore((s) => s.bookings);
   const unblockSlot = useGarageStore((s) => s.unblockSlot);
@@ -73,11 +72,17 @@ export function CalendarPage() {
   return (
     <Stack spacing={2}>
       <Stack direction="row" alignItems="center" justifyContent="space-between">
-        <IconButton onClick={() => setWeekOffset((w) => w - 1)} aria-label="Previous week">
+        <IconButton
+          onClick={() => setWeekOffset((w) => w - 1)}
+          aria-label={t('common.previousWeek')}
+        >
           <ChevronLeftIcon />
         </IconButton>
         <Typography fontWeight={700}>{rangeLabel}</Typography>
-        <IconButton onClick={() => setWeekOffset((w) => w + 1)} aria-label="Next week">
+        <IconButton
+          onClick={() => setWeekOffset((w) => w + 1)}
+          aria-label={t('common.nextWeek')}
+        >
           <ChevronRightIcon />
         </IconButton>
       </Stack>
@@ -118,6 +123,12 @@ export function CalendarPage() {
                 const status = slot?.status ?? 'available';
                 const style = statusStyles[status];
                 const linked = bookingsForSlot(date, hour);
+                const label =
+                  status === 'blocked' && slot?.blockReason === 'general'
+                    ? t('status.slot.blocked')
+                    : status === 'blocked'
+                      ? t('status.slot.bayHold')
+                      : t(`status.slot.${status}`);
 
                 return (
                   <Chip
@@ -126,14 +137,10 @@ export function CalendarPage() {
                       status === 'conflict' ? (
                         <Stack direction="row" spacing={0.5} alignItems="center">
                           <WarningAmberIcon sx={{ fontSize: 14 }} />
-                          <span>{style.label}</span>
+                          <span>{label}</span>
                         </Stack>
-                      ) : status === 'blocked' && slot?.blockReason === 'general' ? (
-                        'Blocked'
-                      ) : status === 'blocked' ? (
-                        'Bay hold'
                       ) : (
-                        style.label
+                        label
                       )
                     }
                     onClick={() => {
@@ -183,27 +190,22 @@ export function CalendarPage() {
                 })
               }
             >
-              Resolve
+              {t('common.resolve')}
             </Button>
           }
         >
-          <Typography fontWeight={700}>Scheduling conflict!</Typography>
-          {conflictSlots.length} overlapping slot
-          {conflictSlots.length > 1 ? 's' : ''}. Tap a conflict cell to accept both
-          times or suggest another availability.
+          <Typography fontWeight={700}>{t('calendar.schedulingConflict')}</Typography>
+          {t('calendar.conflictDetail', { count: conflictSlots.length })}
         </Alert>
       )}
 
       <Card>
         <CardContent>
           <Typography variant="body2" color="text.secondary" paragraph>
-            Tap <strong>Available</strong> to block (general or booking-linked). Tap{' '}
-            <strong>Blocked</strong> to unblock. Tap <strong>Booked</strong> to suggest
-            / move the customer. Tap <strong>Conflict</strong> to resolve.
+            {t('calendar.help')}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Customers can request busy slots from the garage calendar; those land as
-            conflicts here until you confirm or propose a new time.
+            {t('calendar.helpCustomers')}
           </Typography>
         </CardContent>
       </Card>
@@ -217,7 +219,7 @@ export function CalendarPage() {
           /* slots persist live; button confirms UX */
         }}
       >
-        Save Availability
+        {t('calendar.saveAvailability')}
       </Button>
 
       <BlockSlotDialog

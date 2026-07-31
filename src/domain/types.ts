@@ -76,7 +76,21 @@ export interface Booking {
   customerRequestedDespiteConflict?: boolean;
   /** Garage moved slot and notified customer */
   notifyCustomerPending?: boolean;
-  lastCustomerNotice?: string;
+  /** Structured notice — render with i18n `notices.*` */
+  lastCustomerNotice?: CustomerNotice;
+}
+
+export type CustomerNoticeKind =
+  | 'suggested'
+  | 'moved'
+  | 'proposed'
+  | 'customerConfirmed'
+  | 'conflictAccepted';
+
+export interface CustomerNotice {
+  kind: CustomerNoticeKind;
+  /** ISO time for interpolated notices */
+  at?: string;
 }
 
 export interface QuoteRequest {

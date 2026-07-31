@@ -11,6 +11,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import { formatAed } from '../../domain/format';
 import type { Payout } from '../../domain/types';
 import { useGarageStore } from '../../store/useGarageStore';
@@ -26,6 +27,7 @@ type CategoryFilter = 'all' | Payout['category'];
 type PeriodPreset = '7d' | '30d' | '90d' | 'custom' | 'all';
 
 export function EarningsPage() {
+  const { t } = useTranslation();
   const payouts = useGarageStore((s) => s.payouts);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
@@ -96,7 +98,7 @@ export function EarningsPage() {
       <Card sx={{ bgcolor: 'primary.main', color: '#fff', border: 'none' }}>
         <CardContent>
           <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            Available balance (filtered)
+            {t('earnings.availableBalance')}
           </Typography>
           <Typography variant="h3" fontWeight={800}>
             {formatAed(totals.available)}
@@ -104,25 +106,25 @@ export function EarningsPage() {
           <Grid container spacing={1} mt={1.5}>
             <Grid size={{ xs: 6, sm: 3 }}>
               <Typography variant="caption" display="block" sx={{ opacity: 0.85 }}>
-                Held in escrow
+                {t('earnings.heldEscrow')}
               </Typography>
               <Typography fontWeight={700}>{formatAed(totals.held)}</Typography>
             </Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
               <Typography variant="caption" display="block" sx={{ opacity: 0.85 }}>
-                Pending
+                {t('earnings.pending')}
               </Typography>
               <Typography fontWeight={700}>{formatAed(totals.pending)}</Typography>
             </Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
               <Typography variant="caption" display="block" sx={{ opacity: 0.85 }}>
-                Gross
+                {t('earnings.gross')}
               </Typography>
               <Typography fontWeight={700}>{formatAed(totals.gross)}</Typography>
             </Grid>
             <Grid size={{ xs: 6, sm: 3 }}>
               <Typography variant="caption" display="block" sx={{ opacity: 0.85 }}>
-                Platform fees
+                {t('earnings.platformFees')}
               </Typography>
               <Typography fontWeight={700}>{formatAed(totals.fees)}</Typography>
             </Grid>
@@ -134,8 +136,8 @@ export function EarningsPage() {
         <CardContent>
           <Stack spacing={1.5}>
             <TextField
-              label="Search"
-              placeholder="Job ref, customer, service, vehicle…"
+              label={t('common.search')}
+              placeholder={t('earnings.searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               fullWidth
@@ -143,51 +145,51 @@ export function EarningsPage() {
             />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
               <FormControl fullWidth size="small">
-                <InputLabel>Status</InputLabel>
+                <InputLabel>{t('common.status')}</InputLabel>
                 <Select
-                  label="Status"
+                  label={t('common.status')}
                   value={status}
                   onChange={(e) => setStatus(e.target.value as StatusFilter)}
                 >
-                  <MenuItem value="all">All statuses</MenuItem>
-                  <MenuItem value="paid">Paid</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="held">Held</MenuItem>
+                  <MenuItem value="all">{t('earnings.allStatuses')}</MenuItem>
+                  <MenuItem value="paid">{t('status.payout.paid')}</MenuItem>
+                  <MenuItem value="pending">{t('status.payout.pending')}</MenuItem>
+                  <MenuItem value="held">{t('status.payout.held')}</MenuItem>
                 </Select>
               </FormControl>
               <FormControl fullWidth size="small">
-                <InputLabel>Category</InputLabel>
+                <InputLabel>{t('common.category')}</InputLabel>
                 <Select
-                  label="Category"
+                  label={t('common.category')}
                   value={category}
                   onChange={(e) => setCategory(e.target.value as CategoryFilter)}
                 >
-                  <MenuItem value="all">All categories</MenuItem>
-                  <MenuItem value="service">Service</MenuItem>
-                  <MenuItem value="accident">Accident</MenuItem>
-                  <MenuItem value="wash">Wash</MenuItem>
-                  <MenuItem value="parts">Parts</MenuItem>
+                  <MenuItem value="all">{t('earnings.allCategories')}</MenuItem>
+                  <MenuItem value="service">{t('earnings.category.service')}</MenuItem>
+                  <MenuItem value="accident">{t('earnings.category.accident')}</MenuItem>
+                  <MenuItem value="wash">{t('earnings.category.wash')}</MenuItem>
+                  <MenuItem value="parts">{t('earnings.category.parts')}</MenuItem>
                 </Select>
               </FormControl>
               <FormControl fullWidth size="small">
-                <InputLabel>Time period</InputLabel>
+                <InputLabel>{t('earnings.timePeriod')}</InputLabel>
                 <Select
-                  label="Time period"
+                  label={t('earnings.timePeriod')}
                   value={period}
                   onChange={(e) => setPeriod(e.target.value as PeriodPreset)}
                 >
-                  <MenuItem value="7d">Last 7 days</MenuItem>
-                  <MenuItem value="30d">Last 30 days</MenuItem>
-                  <MenuItem value="90d">Last 90 days</MenuItem>
-                  <MenuItem value="custom">Custom range</MenuItem>
-                  <MenuItem value="all">All time</MenuItem>
+                  <MenuItem value="7d">{t('earnings.last7')}</MenuItem>
+                  <MenuItem value="30d">{t('earnings.last30')}</MenuItem>
+                  <MenuItem value="90d">{t('earnings.last90')}</MenuItem>
+                  <MenuItem value="custom">{t('earnings.customRange')}</MenuItem>
+                  <MenuItem value="all">{t('earnings.allTime')}</MenuItem>
                 </Select>
               </FormControl>
             </Stack>
             {period === 'custom' && (
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                 <TextField
-                  label="From"
+                  label={t('common.from')}
                   type="date"
                   size="small"
                   fullWidth
@@ -196,7 +198,7 @@ export function EarningsPage() {
                   slotProps={{ inputLabel: { shrink: true } }}
                 />
                 <TextField
-                  label="To"
+                  label={t('common.to')}
                   type="date"
                   size="small"
                   fullWidth
@@ -208,7 +210,7 @@ export function EarningsPage() {
             )}
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
               <TextField
-                label="Min net (AED)"
+                label={t('earnings.minNet')}
                 type="number"
                 size="small"
                 fullWidth
@@ -216,7 +218,7 @@ export function EarningsPage() {
                 onChange={(e) => setMinPrice(e.target.value)}
               />
               <TextField
-                label="Max net (AED)"
+                label={t('earnings.maxNet')}
                 type="number"
                 size="small"
                 fullWidth
@@ -229,7 +231,7 @@ export function EarningsPage() {
       </Card>
 
       <Typography variant="subtitle1">
-        Payout history ({totals.count})
+        {t('earnings.payoutHistory', { count: totals.count })}
       </Typography>
 
       {filtered.map((p) => (
@@ -251,14 +253,17 @@ export function EarningsPage() {
               <Stack direction="row" flexWrap="wrap" gap={0.75}>
                 <Chip
                   size="small"
-                  label={p.status}
+                  label={t(`status.payout.${p.status}`)}
                   color={statusColor[p.status]}
-                  sx={{ textTransform: 'capitalize' }}
                 />
-                <Chip size="small" label={p.category} variant="outlined" sx={{ textTransform: 'capitalize' }} />
                 <Chip
                   size="small"
-                  label={p.paymentMethod.replace('_', ' ')}
+                  label={t(`earnings.category.${p.category}`)}
+                  variant="outlined"
+                />
+                <Chip
+                  size="small"
+                  label={t(`earnings.payment.${p.paymentMethod}`)}
                   variant="outlined"
                   sx={{ textTransform: 'capitalize' }}
                 />
@@ -267,7 +272,7 @@ export function EarningsPage() {
               <Grid container spacing={1}>
                 <Grid size={{ xs: 6, sm: 3 }}>
                   <Typography variant="caption" color="text.secondary">
-                    Customer
+                    {t('earnings.customer')}
                   </Typography>
                   <Typography variant="body2" fontWeight={600}>
                     {p.customerName}
@@ -275,7 +280,7 @@ export function EarningsPage() {
                 </Grid>
                 <Grid size={{ xs: 6, sm: 3 }}>
                   <Typography variant="caption" color="text.secondary">
-                    Vehicle
+                    {t('earnings.vehicle')}
                   </Typography>
                   <Typography variant="body2" fontWeight={600}>
                     {p.vehicle || '—'}
@@ -283,7 +288,7 @@ export function EarningsPage() {
                 </Grid>
                 <Grid size={{ xs: 6, sm: 3 }}>
                   <Typography variant="caption" color="text.secondary">
-                    Gross / Fee
+                    {t('earnings.grossFee')}
                   </Typography>
                   <Typography variant="body2" fontWeight={600}>
                     {formatAed(p.grossAed)} / {formatAed(p.platformFeeAed)}
@@ -291,7 +296,7 @@ export function EarningsPage() {
                 </Grid>
                 <Grid size={{ xs: 6, sm: 3 }}>
                   <Typography variant="caption" color="text.secondary">
-                    Completed
+                    {t('earnings.completed')}
                   </Typography>
                   <Typography variant="body2" fontWeight={600}>
                     {p.completedAt
@@ -309,7 +314,7 @@ export function EarningsPage() {
         <Card>
           <CardContent>
             <Typography color="text.secondary" textAlign="center">
-              No payouts match your search or filters.
+              {t('earnings.empty')}
             </Typography>
           </CardContent>
         </Card>

@@ -267,7 +267,10 @@ export const useGarageStore = create<GarageState>()(
                   status: 'awaiting_customer' as const,
                   proposedAt: newIso,
                   notifyCustomerPending: true,
-                  lastCustomerNotice: `Suggested new time: ${dayjs(newIso).format('D MMM YYYY, h:mm A')}. Waiting for customer confirmation.`,
+                  lastCustomerNotice: {
+                    kind: 'suggested' as const,
+                    at: newIso,
+                  },
                 }
               : b,
           );
@@ -286,7 +289,10 @@ export const useGarageStore = create<GarageState>()(
                 scheduledAt: newIso,
                 proposedAt: undefined,
                 notifyCustomerPending: true,
-                lastCustomerNotice: `Moved to ${dayjs(newIso).format('D MMM YYYY, h:mm A')}. Customer notified.`,
+                lastCustomerNotice: {
+                  kind: 'moved' as const,
+                  at: newIso,
+                },
               };
             }
             return {
@@ -294,7 +300,10 @@ export const useGarageStore = create<GarageState>()(
               status: 'awaiting_customer' as const,
               proposedAt: newIso,
               notifyCustomerPending: true,
-              lastCustomerNotice: `Proposed move to ${dayjs(newIso).format('D MMM YYYY, h:mm A')}. Awaiting customer confirmation.`,
+              lastCustomerNotice: {
+                kind: 'proposed' as const,
+                at: newIso,
+              },
             };
           });
           return { bookings, slots: withSyncedSlots(bookings, s.slots) };
@@ -313,7 +322,9 @@ export const useGarageStore = create<GarageState>()(
                   scheduledAt: b.proposedAt!,
                   proposedAt: undefined,
                   notifyCustomerPending: false,
-                  lastCustomerNotice: 'Customer confirmed the new time.',
+                  lastCustomerNotice: {
+                    kind: 'customerConfirmed' as const,
+                  },
                 }
               : b,
           );
@@ -335,8 +346,9 @@ export const useGarageStore = create<GarageState>()(
                 status: 'confirmed' as const,
                 scheduledAt: b.proposedAt || b.scheduledAt,
                 proposedAt: undefined,
-                lastCustomerNotice:
-                  'Accepted despite schedule conflict (double-booked bay).',
+                lastCustomerNotice: {
+                  kind: 'conflictAccepted' as const,
+                },
               };
             }
             return b;
@@ -482,7 +494,7 @@ export const useGarageStore = create<GarageState>()(
         }),
     }),
     {
-      name: 'go-garagi-garage-v5',
+      name: 'go-garagi-garage-v6',
       partialize: (s) => ({
         user: s.user,
         isAuthenticated: s.isAuthenticated,

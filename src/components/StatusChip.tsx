@@ -1,4 +1,5 @@
 import Chip from '@mui/material/Chip';
+import { useTranslation } from 'react-i18next';
 import type { BookingStatus, QuoteStatus } from '../domain/types';
 
 const bookingColors: Record<
@@ -25,15 +26,12 @@ const quoteColors: Record<
   lost: 'error',
 };
 
-function labelize(value: string) {
-  return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 export function BookingStatusChip({ status }: { status: BookingStatus }) {
+  const { t } = useTranslation();
   return (
     <Chip
       size="small"
-      label={labelize(status)}
+      label={t(`status.booking.${status}`)}
       color={bookingColors[status]}
       variant="filled"
       sx={{ fontWeight: 600 }}
@@ -42,10 +40,11 @@ export function BookingStatusChip({ status }: { status: BookingStatus }) {
 }
 
 export function QuoteStatusChip({ status }: { status: QuoteStatus }) {
+  const { t } = useTranslation();
   return (
     <Chip
       size="small"
-      label={labelize(status)}
+      label={t(`status.quote.${status}`)}
       color={quoteColors[status]}
       variant="filled"
     />

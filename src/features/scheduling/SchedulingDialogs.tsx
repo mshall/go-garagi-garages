@@ -21,11 +21,14 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { CustomerNoticeText } from '../../components/CustomerNoticeText';
 import { bookingSlotParts } from '../../domain/availability';
 import type { BlockReason, Booking, SlotStatus } from '../../domain/types';
 import { useGarageStore } from '../../store/useGarageStore';
 
 function BookingSummary({ booking }: { booking: Booking }) {
+  const { t } = useTranslation();
   return (
     <Stack spacing={0.5} p={1.5} bgcolor="#F8FAFC" borderRadius={2}>
       <Typography fontWeight={700}>
@@ -38,16 +41,20 @@ function BookingSummary({ booking }: { booking: Booking }) {
         </Typography>
       )}
       <Typography variant="body2" fontWeight={600}>
-        Requested: {dayjs(booking.scheduledAt).format('ddd D MMM · h:mm A')}
+        {t('scheduling.requested', {
+          time: dayjs(booking.scheduledAt).format('ddd D MMM · h:mm A'),
+        })}
       </Typography>
       {booking.proposedAt && (
         <Typography variant="body2" color="info.main" fontWeight={600}>
-          Proposed: {dayjs(booking.proposedAt).format('ddd D MMM · h:mm A')}
+          {t('scheduling.proposed', {
+            time: dayjs(booking.proposedAt).format('ddd D MMM · h:mm A'),
+          })}
         </Typography>
       )}
       {booking.customerRequestedDespiteConflict && (
         <Alert severity="warning" sx={{ mt: 1 }}>
-          Customer selected this slot knowing it may conflict. Garage confirmation required.
+          {t('scheduling.customerDespiteConflict')}
         </Alert>
       )}
       {booking.notes && (
@@ -59,14 +66,18 @@ function BookingSummary({ booking }: { booking: Booking }) {
   );
 }
 
-const pickerStyles: Record<
-  SlotStatus,
-  { bgcolor: string; color: string; label: string }
-> = {
-  available: { bgcolor: '#F8FAFC', color: '#64748B', label: 'Free' },
-  booked: { bgcolor: '#E2E8F0', color: '#64748B', label: 'Busy' },
-  blocked: { bgcolor: '#FED7AA', color: '#9A3412', label: 'Blocked' },
-  conflict: { bgcolor: '#FEF3C7', color: '#B45309', label: 'Conflict' },
+const pickerStyles: Record<SlotStatus, { bgcolor: string; color: string }> = {
+  available: { bgcolor: '#F8FAFC', color: '#64748B' },
+  booked: { bgcolor: '#E2E8F0', color: '#64748B' },
+  blocked: { bgcolor: '#FED7AA', color: '#9A3412' },
+  conflict: { bgcolor: '#FEF3C7', color: '#B45309' },
+};
+
+const pickerLabelKey: Record<SlotStatus, string> = {
+  available: 'status.slot.free',
+  booked: 'status.slot.busy',
+  blocked: 'status.slot.blocked',
+  conflict: 'status.slot.conflict',
 };
 
 function slotIso(date: string, hour: number) {
@@ -89,6 +100,7 @@ function SuggestTimeCalendar({
   /** Original requested time to highlight as context */
   highlightIso?: string;
 }) {
+  const { t } = useTranslation();
   const slots = useGarageStore((s) => s.slots);
   const bookings = useGarageStore((s) => s.bookings);
   const [weekOffset, setWeekOffset] = useState(0);
@@ -125,13 +137,13 @@ function SuggestTimeCalendar({
     <Stack spacing={1.5}>
       <Stack direction="row" alignItems="center" justifyContent="space-between">
         <Typography variant="subtitle2" fontWeight={700}>
-          Select a free time on the calendar
+          {t('scheduling.selectFreeTime')}
         </Typography>
         <Stack direction="row" alignItems="center" spacing={0.5}>
           <IconButton
             size="small"
             onClick={() => setWeekOffset((w) => w - 1)}
-            aria-label="Previous week"
+            aria-label={t('common.previousWeek')}
           >
             <ChevronLeftIcon fontSize="small" />
           </IconButton>
@@ -141,7 +153,7 @@ function SuggestTimeCalendar({
           <IconButton
             size="small"
             onClick={() => setWeekOffset((w) => w + 1)}
-            aria-label="Next week"
+            aria-label={t('common.nextWeek')}
           >
             <ChevronRightIcon fontSize="small" />
           </IconButton>
@@ -150,8 +162,9 @@ function SuggestTimeCalendar({
 
       {value && (
         <Alert severity="success" sx={{ py: 0.5 }}>
-          Suggested:{' '}
-          <strong>{dayjs(value).format('ddd D MMM · h:mm A')}</strong>
+          {t('scheduling.suggested', {
+            time: dayjs(value).format('ddd D MMM · h:mm A'),
+          })}
         </Alert>
       )}
 
@@ -203,12 +216,10 @@ function SuggestTimeCalendar({
                     size="small"
                     label={
                       isSelected
-                        ? 'Selected'
+                        ? t('status.slot.selected')
                         : isOriginal
-                          ? 'Current'
-                          : selectable
-                            ? style.label
-                            : style.label
+                          ? t('status.slot.current')
+                          : t(pickerLabelKey[status])
                     }
                     onClick={() => {
                       if (!selectable) return;
@@ -256,8 +267,7 @@ function SuggestTimeCalendar({
 
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
         <Typography variant="caption" color="text.secondary">
-          Tap a free cell to propose that time. Busy / blocked / conflict slots stay
-          unavailable.
+          {t('scheduling.tapHint')}
         </Typography>
       </Stack>
     </Stack>
@@ -274,6 +284,7 @@ export function ConfirmBookingDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const acceptBooking = useGarageStore((s) => s.acceptBooking);
   const suggestBookingTime = useGarageStore((s) => s.suggestBookingTime);
   const getConflictsForBooking = useGarageStore((s) => s.getConflictsForBooking);
@@ -298,15 +309,16 @@ export function ConfirmBookingDialog({
       fullWidth
       maxWidth={mode === 'suggest' ? 'md' : 'sm'}
     >
-      <DialogTitle>Confirm booking</DialogTitle>
+      <DialogTitle>{t('scheduling.confirmTitle')}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} mt={1}>
           <BookingSummary booking={booking} />
           {conflicts.length > 0 && (
             <Alert severity="error">
-              Conflicts with {conflicts.length} other booking
-              {conflicts.length > 1 ? 's' : ''}:{' '}
-              {conflicts.map((c) => `${c.customerName} (${c.id})`).join(', ')}
+              {t('scheduling.conflictsWith', {
+                count: conflicts.length,
+                names: conflicts.map((c) => `${c.customerName} (${c.id})`).join(', '),
+              })}
             </Alert>
           )}
           <RadioGroup
@@ -321,14 +333,18 @@ export function ConfirmBookingDialog({
               control={<Radio />}
               label={
                 conflicts.length
-                  ? `Accept at requested time anyway (${dayjs(booking.scheduledAt).format('h:mm A')})`
-                  : `Accept at requested time (${dayjs(booking.scheduledAt).format('ddd D MMM · h:mm A')})`
+                  ? t('scheduling.acceptAnyway', {
+                      time: dayjs(booking.scheduledAt).format('h:mm A'),
+                    })
+                  : t('scheduling.acceptAt', {
+                      time: dayjs(booking.scheduledAt).format('ddd D MMM · h:mm A'),
+                    })
               }
             />
             <FormControlLabel
               value="suggest"
               control={<Radio />}
-              label="Suggest another time for the customer to confirm"
+              label={t('scheduling.suggestAnother')}
             />
           </RadioGroup>
           {mode === 'suggest' && (
@@ -342,7 +358,7 @@ export function ConfirmBookingDialog({
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('common.cancel')}</Button>
         <Button
           variant="contained"
           disabled={mode === 'suggest' && !suggested}
@@ -357,7 +373,9 @@ export function ConfirmBookingDialog({
             onClose();
           }}
         >
-          {mode === 'accept' ? 'Confirm booking' : 'Send suggestion'}
+          {mode === 'accept'
+            ? t('scheduling.confirmBooking')
+            : t('scheduling.sendSuggestion')}
         </Button>
       </DialogActions>
     </Dialog>
@@ -376,6 +394,7 @@ export function ConflictResolveDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const bookings = useGarageStore((s) => s.bookings);
   const resolveConflictAcceptBoth = useGarageStore(
     (s) => s.resolveConflictAcceptBoth,
@@ -420,15 +439,15 @@ export function ConflictResolveDialog({
       fullWidth
       maxWidth={mode === 'reschedule' ? 'md' : 'sm'}
     >
-      <DialogTitle>Resolve scheduling conflict</DialogTitle>
+      <DialogTitle>{t('scheduling.resolveTitle')}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} mt={1}>
           <Alert severity="warning">
-            {dayjs(`${date}T${String(hour).padStart(2, '0')}:00:00`).format(
-              'ddd D MMM · h:mm A',
-            )}{' '}
-            has overlapping bookings. Accept both at the same time, or pick another
-            time from the calendar.
+            {t('scheduling.resolveAlert', {
+              time: dayjs(`${date}T${String(hour).padStart(2, '0')}:00:00`).format(
+                'ddd D MMM · h:mm A',
+              ),
+            })}
           </Alert>
           {at.map((b) => (
             <BookingSummary key={b.id} booking={b} />
@@ -443,20 +462,20 @@ export function ConflictResolveDialog({
             <FormControlLabel
               value="accept_both"
               control={<Radio />}
-              label="Accept both at this time (double-book)"
+              label={t('scheduling.acceptBoth')}
             />
             <FormControlLabel
               value="reschedule"
               control={<Radio />}
-              label="Suggest / move one booking — pick from calendar"
+              label={t('scheduling.rescheduleOne')}
             />
           </RadioGroup>
           {mode === 'reschedule' && (
             <Stack spacing={1.5}>
               <FormControl fullWidth size="small">
-                <InputLabel>Booking to move</InputLabel>
+                <InputLabel>{t('scheduling.bookingToMove')}</InputLabel>
                 <Select
-                  label="Booking to move"
+                  label={t('scheduling.bookingToMove')}
                   value={targetId}
                   onChange={(e) => {
                     setTargetId(e.target.value);
@@ -488,12 +507,12 @@ export function ConflictResolveDialog({
                 <FormControlLabel
                   value="notify"
                   control={<Radio />}
-                  label="Suggest & notify customer"
+                  label={t('scheduling.suggestNotify')}
                 />
                 <FormControlLabel
                   value="direct"
                   control={<Radio />}
-                  label="Move directly & notify"
+                  label={t('scheduling.moveDirect')}
                 />
               </RadioGroup>
             </Stack>
@@ -501,7 +520,7 @@ export function ConflictResolveDialog({
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('common.cancel')}</Button>
         <Button
           variant="contained"
           disabled={mode === 'reschedule' && (!targetId || !suggested)}
@@ -514,7 +533,7 @@ export function ConflictResolveDialog({
             onClose();
           }}
         >
-          Apply
+          {t('common.apply')}
         </Button>
       </DialogActions>
     </Dialog>
@@ -533,6 +552,7 @@ export function BlockSlotDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const bookings = useGarageStore((s) => s.bookings);
   const blockSlot = useGarageStore((s) => s.blockSlot);
   const [reason, setReason] = useState<BlockReason>('general');
@@ -545,7 +565,7 @@ export function BlockSlotDialog({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Block time slot</DialogTitle>
+      <DialogTitle>{t('scheduling.blockTitle')}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} mt={1}>
           <Typography fontWeight={600}>
@@ -560,19 +580,19 @@ export function BlockSlotDialog({
             <FormControlLabel
               value="general"
               control={<Radio />}
-              label="General blocking (closed / staff / maintenance)"
+              label={t('scheduling.blockGeneral')}
             />
             <FormControlLabel
               value="booking"
               control={<Radio />}
-              label="Block due to a booking"
+              label={t('scheduling.blockBooking')}
             />
           </RadioGroup>
           {reason === 'booking' && (
             <FormControl fullWidth size="small">
-              <InputLabel>Booking</InputLabel>
+              <InputLabel>{t('scheduling.booking')}</InputLabel>
               <Select
-                label="Booking"
+                label={t('scheduling.booking')}
                 value={bookingId}
                 onChange={(e) => setBookingId(e.target.value)}
               >
@@ -585,7 +605,7 @@ export function BlockSlotDialog({
             </FormControl>
           )}
           <TextField
-            label="Note (optional)"
+            label={t('scheduling.noteOptional')}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             fullWidth
@@ -594,7 +614,7 @@ export function BlockSlotDialog({
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('common.cancel')}</Button>
         <Button
           variant="contained"
           color="warning"
@@ -607,7 +627,7 @@ export function BlockSlotDialog({
             onClose();
           }}
         >
-          Block slot
+          {t('scheduling.blockSlot')}
         </Button>
       </DialogActions>
     </Dialog>
@@ -624,6 +644,7 @@ export function BookedSlotDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const moveBooking = useGarageStore((s) => s.moveBooking);
   const suggestBookingTime = useGarageStore((s) => s.suggestBookingTime);
   const customerConfirmProposedTime = useGarageStore(
@@ -643,12 +664,14 @@ export function BookedSlotDialog({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>Manage booked slot</DialogTitle>
+      <DialogTitle>{t('scheduling.manageTitle')}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} mt={1}>
           <BookingSummary booking={booking} />
           {booking.lastCustomerNotice && (
-            <Alert severity="info">{booking.lastCustomerNotice}</Alert>
+            <Alert severity="info">
+              <CustomerNoticeText notice={booking.lastCustomerNotice} />
+            </Alert>
           )}
           <RadioGroup
             value={mode}
@@ -657,12 +680,12 @@ export function BookedSlotDialog({
             <FormControlLabel
               value="suggest"
               control={<Radio />}
-              label="Suggest another time — customer must confirm"
+              label={t('scheduling.suggestCustomerConfirm')}
             />
             <FormControlLabel
               value="direct"
               control={<Radio />}
-              label="Move directly and notify customer"
+              label={t('scheduling.moveDirectNotify')}
             />
           </RadioGroup>
           <SuggestTimeCalendar
@@ -679,13 +702,13 @@ export function BookedSlotDialog({
                 onClose();
               }}
             >
-              Simulate customer confirmation
+              {t('scheduling.simulateCustomerConfirm')}
             </Button>
           )}
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>{t('common.close')}</Button>
         <Button
           variant="contained"
           disabled={!suggested}
@@ -696,7 +719,9 @@ export function BookedSlotDialog({
             onClose();
           }}
         >
-          {mode === 'suggest' ? 'Send suggestion' : 'Move & notify'}
+          {mode === 'suggest'
+            ? t('scheduling.sendSuggestion')
+            : t('scheduling.moveAndNotify')}
         </Button>
       </DialogActions>
     </Dialog>

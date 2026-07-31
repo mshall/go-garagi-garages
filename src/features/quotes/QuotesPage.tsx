@@ -16,12 +16,14 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import PhotoLibraryOutlinedIcon from '@mui/icons-material/PhotoLibraryOutlined';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import { QuoteStatusChip } from '../../components/StatusChip';
 import { formatAed } from '../../domain/format';
 import type { QuoteStatus } from '../../domain/types';
 import { useGarageStore } from '../../store/useGarageStore';
 
 export function QuotesPage() {
+  const { t } = useTranslation();
   const quotes = useGarageStore((s) => s.quotes);
   const submitQuote = useGarageStore((s) => s.submitQuote);
   const [tab, setTab] = useState<QuoteStatus>('new');
@@ -29,7 +31,7 @@ export function QuotesPage() {
   const [price, setPrice] = useState('2500');
   const [eta, setEta] = useState('5');
   const [pickup, setPickup] = useState(true);
-  const [notes, setNotes] = useState('OEM parts. Free pickup within Dubai.');
+  const [notes, setNotes] = useState(t('quotes.defaultNotes'));
 
   const filtered = useMemo(
     () => quotes.filter((q) => q.status === tab),
@@ -41,7 +43,7 @@ export function QuotesPage() {
   return (
     <Stack spacing={2}>
       <Typography variant="body2" color="text.secondary">
-        Accident RFPs with masked customer PII until you win the job.
+        {t('quotes.subtitle')}
       </Typography>
 
       <Tabs
@@ -50,10 +52,10 @@ export function QuotesPage() {
         variant="scrollable"
         allowScrollButtonsMobile
       >
-        <Tab label="New" value="new" />
-        <Tab label="Responded" value="responded" />
-        <Tab label="Won" value="won" />
-        <Tab label="Lost" value="lost" />
+        <Tab label={t('quotes.new')} value="new" />
+        <Tab label={t('quotes.responded')} value="responded" />
+        <Tab label={t('quotes.won')} value="won" />
+        <Tab label={t('quotes.lost')} value="lost" />
       </Tabs>
 
       <Stack spacing={1.5}>
@@ -72,23 +74,30 @@ export function QuotesPage() {
               </Typography>
               <Stack direction="row" spacing={2} mt={1.5} flexWrap="wrap">
                 <Typography variant="caption" color="text.secondary">
-                  Insurer: {q.insurer || 'Self-pay'}
+                  {q.insurer
+                    ? t('quotes.insurer', { name: q.insurer })
+                    : t('quotes.selfPay')}
                 </Typography>
                 <Stack direction="row" spacing={0.5} alignItems="center">
                   <PhotoLibraryOutlinedIcon sx={{ fontSize: 14 }} color="action" />
                   <Typography variant="caption" color="text.secondary">
-                    {q.mediaCount} media
+                    {t('quotes.media', { count: q.mediaCount })}
                   </Typography>
                 </Stack>
                 <Typography variant="caption" color="text.secondary">
-                  Expires {dayjs(q.expiresAt).format('D MMM, h:mm A')}
+                  {t('quotes.expires', {
+                    date: dayjs(q.expiresAt).format('D MMM, h:mm A'),
+                  })}
                 </Typography>
               </Stack>
               {q.myQuote && (
                 <Box mt={1.5} p={1.5} bgcolor="#F8FAFC" borderRadius={2}>
                   <Typography variant="body2" fontWeight={600}>
-                    Your quote: {formatAed(q.myQuote.priceAed)} · {q.myQuote.etaDays} days
-                    {q.myQuote.pickup ? ' · Pickup' : ''}
+                    {t('quotes.yourQuote', {
+                      price: formatAed(q.myQuote.priceAed),
+                      days: q.myQuote.etaDays,
+                    })}
+                    {q.myQuote.pickup ? ` · ${t('quotes.pickup')}` : ''}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {q.myQuote.notes}
@@ -100,9 +109,12 @@ export function QuotesPage() {
                   variant="contained"
                   fullWidth
                   sx={{ mt: 2 }}
-                  onClick={() => setActiveId(q.id)}
+                  onClick={() => {
+                    setActiveId(q.id);
+                    setNotes(t('quotes.defaultNotes'));
+                  }}
                 >
-                  Submit Quote
+                  {t('quotes.submitQuote')}
                 </Button>
               )}
             </CardContent>
@@ -112,7 +124,7 @@ export function QuotesPage() {
           <Card>
             <CardContent>
               <Typography color="text.secondary" textAlign="center">
-                No {tab} quote requests.
+                {t('quotes.empty', { status: t(`quotes.${tab}`) })}
               </Typography>
             </CardContent>
           </Card>
@@ -120,18 +132,18 @@ export function QuotesPage() {
       </Stack>
 
       <Dialog open={!!active} onClose={() => setActiveId(null)} fullWidth maxWidth="sm">
-        <DialogTitle>Submit Quote — {active?.id}</DialogTitle>
+        <DialogTitle>{t('quotes.dialogTitle', { id: active?.id })}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
             <TextField
-              label="Price (AED)"
+              label={t('quotes.priceAed')}
               type="number"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               fullWidth
             />
             <TextField
-              label="ETA (days)"
+              label={t('quotes.etaDays')}
               type="number"
               value={eta}
               onChange={(e) => setEta(e.target.value)}
@@ -141,10 +153,10 @@ export function QuotesPage() {
               control={
                 <Switch checked={pickup} onChange={(e) => setPickup(e.target.checked)} />
               }
-              label="Offer pickup / tow-in"
+              label={t('quotes.offerPickup')}
             />
             <TextField
-              label="Notes"
+              label={t('common.notes')}
               multiline
               minRows={3}
               value={notes}
@@ -154,7 +166,7 @@ export function QuotesPage() {
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setActiveId(null)}>Cancel</Button>
+          <Button onClick={() => setActiveId(null)}>{t('common.cancel')}</Button>
           <Button
             variant="contained"
             onClick={() => {
@@ -169,7 +181,7 @@ export function QuotesPage() {
               setTab('responded');
             }}
           >
-            Send Quote
+            {t('quotes.sendQuote')}
           </Button>
         </DialogActions>
       </Dialog>

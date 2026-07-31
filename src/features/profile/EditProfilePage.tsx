@@ -3,11 +3,13 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useGarageStore } from '../../store/useGarageStore';
 
 export function EditProfilePage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const garage = useGarageStore((s) => s.garage);
   const updateGarage = useGarageStore((s) => s.updateGarage);
   const [name, setName] = useState(garage.name);
@@ -21,46 +23,46 @@ export function EditProfilePage() {
   return (
     <Stack spacing={2.5} maxWidth={640}>
       <Typography variant="body2" color="text.secondary">
-        Update how customers see your garage on Go Garagi.
+        {t('profile.editSubtitle')}
       </Typography>
       <TextField
-        label="Garage Name"
+        label={t('profile.garageName')}
         value={name}
         onChange={(e) => setName(e.target.value)}
         fullWidth
       />
       <TextField
-        label="Owner Name"
+        label={t('profile.ownerName')}
         value={ownerName}
         onChange={(e) => setOwnerName(e.target.value)}
         fullWidth
       />
       <TextField
-        label="WhatsApp"
+        label={t('profile.whatsapp')}
         value={whatsapp}
         onChange={(e) => setWhatsapp(e.target.value)}
         fullWidth
       />
       <TextField
-        label="Phone"
+        label={t('profile.phone')}
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
         fullWidth
       />
       <TextField
-        label="Email"
+        label={t('profile.email')}
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         fullWidth
       />
       <TextField
-        label="Address"
+        label={t('profile.address')}
         value={address}
         onChange={(e) => setAddress(e.target.value)}
         fullWidth
       />
       <TextField
-        label="Description"
+        label={t('profile.description')}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         fullWidth
@@ -84,7 +86,7 @@ export function EditProfilePage() {
           navigate('/profile');
         }}
       >
-        Save Changes
+        {t('profile.saveChanges')}
       </Button>
     </Stack>
   );

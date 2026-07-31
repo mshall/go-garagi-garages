@@ -7,6 +7,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { BookingStatusChip } from '../../components/StatusChip';
 import { useGarageStore } from '../../store/useGarageStore';
@@ -14,6 +15,7 @@ import { useGarageStore } from '../../store/useGarageStore';
 export function RejectBookingPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const booking = useGarageStore((s) => s.bookings.find((b) => b.id === id));
   const rejectBooking = useGarageStore((s) => s.rejectBooking);
   const [reason, setReason] = useState('');
@@ -21,16 +23,16 @@ export function RejectBookingPage() {
   if (!booking) return <Navigate to="/bookings" replace />;
 
   const rows = [
-    { label: 'Service Type:', value: booking.serviceName },
+    { label: t('bookings.reject.serviceType'), value: booking.serviceName },
     {
-      label: 'Scheduled Date:',
+      label: t('bookings.reject.scheduledDate'),
       value: dayjs(booking.scheduledAt).format('MMMM D, YYYY'),
     },
     {
-      label: 'Scheduled Time:',
+      label: t('bookings.reject.scheduledTime'),
       value: dayjs(booking.scheduledAt).format('hh:mm A'),
     },
-    { label: 'Customer Name:', value: booking.customerName },
+    { label: t('bookings.reject.customerName'), value: booking.customerName },
   ];
 
   return (
@@ -63,13 +65,13 @@ export function RejectBookingPage() {
 
       <Box>
         <Typography fontWeight={600} mb={1}>
-          Add a reason or suggestion
+          {t('bookings.reject.addReason')}
         </Typography>
         <TextField
           fullWidth
           multiline
           minRows={4}
-          placeholder="Please book another time or suggest alternative dates."
+          placeholder={t('bookings.reject.reasonPlaceholder')}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
         />
@@ -85,7 +87,7 @@ export function RejectBookingPage() {
           navigate('/bookings');
         }}
       >
-        Send Rejection
+        {t('bookings.reject.sendRejection')}
       </Button>
     </Stack>
   );

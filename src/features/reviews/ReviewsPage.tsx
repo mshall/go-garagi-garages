@@ -17,12 +17,14 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import { useGarageStore } from '../../store/useGarageStore';
 
 type ResponseFilter = 'all' | 'awaiting' | 'responded';
 type RatingFilter = 'all' | '5' | '4' | '3' | '2' | '1';
 
 export function ReviewsPage() {
+  const { t } = useTranslation();
   const reviews = useGarageStore((s) => s.reviews);
   const garage = useGarageStore((s) => s.garage);
   const respondToReview = useGarageStore((s) => s.respondToReview);
@@ -80,7 +82,10 @@ export function ReviewsPage() {
           </Typography>
           <Rating value={garage.rating} precision={0.1} readOnly sx={{ color: '#FDE68A' }} />
           <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            Based on {garage.reviewCount} customer reviews · showing {filtered.length}
+            {t('reviews.basedOn', {
+              total: garage.reviewCount,
+              showing: filtered.length,
+            })}
           </Typography>
         </CardContent>
       </Card>
@@ -89,8 +94,8 @@ export function ReviewsPage() {
         <CardContent>
           <Stack spacing={2}>
             <TextField
-              label="Search reviews"
-              placeholder="Customer, service, or comment"
+              label={t('reviews.search')}
+              placeholder={t('reviews.searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               fullWidth
@@ -103,34 +108,34 @@ export function ReviewsPage() {
               onChange={(_, v: ResponseFilter | null) => v && setResponseFilter(v)}
               fullWidth
             >
-              <ToggleButton value="all">All</ToggleButton>
-              <ToggleButton value="awaiting">Awaiting reply</ToggleButton>
-              <ToggleButton value="responded">Responded</ToggleButton>
+              <ToggleButton value="all">{t('common.all')}</ToggleButton>
+              <ToggleButton value="awaiting">{t('reviews.awaitingReply')}</ToggleButton>
+              <ToggleButton value="responded">{t('reviews.responded')}</ToggleButton>
             </ToggleButtonGroup>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
               <FormControl fullWidth size="small">
-                <InputLabel>Rating</InputLabel>
+                <InputLabel>{t('reviews.rating')}</InputLabel>
                 <Select
-                  label="Rating"
+                  label={t('reviews.rating')}
                   value={ratingFilter}
                   onChange={(e) => setRatingFilter(e.target.value as RatingFilter)}
                 >
-                  <MenuItem value="all">All ratings</MenuItem>
-                  <MenuItem value="5">5 stars</MenuItem>
-                  <MenuItem value="4">4 stars</MenuItem>
-                  <MenuItem value="3">3 stars</MenuItem>
-                  <MenuItem value="2">2 stars</MenuItem>
-                  <MenuItem value="1">1 star</MenuItem>
+                  <MenuItem value="all">{t('reviews.allRatings')}</MenuItem>
+                  <MenuItem value="5">{t('reviews.stars', { count: 5 })}</MenuItem>
+                  <MenuItem value="4">{t('reviews.stars', { count: 4 })}</MenuItem>
+                  <MenuItem value="3">{t('reviews.stars', { count: 3 })}</MenuItem>
+                  <MenuItem value="2">{t('reviews.stars', { count: 2 })}</MenuItem>
+                  <MenuItem value="1">{t('reviews.star')}</MenuItem>
                 </Select>
               </FormControl>
               <FormControl fullWidth size="small">
-                <InputLabel>Service</InputLabel>
+                <InputLabel>{t('common.service')}</InputLabel>
                 <Select
-                  label="Service"
+                  label={t('common.service')}
                   value={serviceFilter}
                   onChange={(e) => setServiceFilter(e.target.value)}
                 >
-                  <MenuItem value="all">All services</MenuItem>
+                  <MenuItem value="all">{t('reviews.allServices')}</MenuItem>
                   {services.map((s) => (
                     <MenuItem key={s} value={s}>
                       {s}
@@ -139,18 +144,18 @@ export function ReviewsPage() {
                 </Select>
               </FormControl>
               <FormControl fullWidth size="small">
-                <InputLabel>Sort by</InputLabel>
+                <InputLabel>{t('reviews.sortBy')}</InputLabel>
                 <Select
-                  label="Sort by"
+                  label={t('reviews.sortBy')}
                   value={sortBy}
                   onChange={(e) =>
                     setSortBy(e.target.value as typeof sortBy)
                   }
                 >
-                  <MenuItem value="newest">Newest</MenuItem>
-                  <MenuItem value="oldest">Oldest</MenuItem>
-                  <MenuItem value="highest">Highest rating</MenuItem>
-                  <MenuItem value="lowest">Lowest rating</MenuItem>
+                  <MenuItem value="newest">{t('reviews.newest')}</MenuItem>
+                  <MenuItem value="oldest">{t('reviews.oldest')}</MenuItem>
+                  <MenuItem value="highest">{t('reviews.highest')}</MenuItem>
+                  <MenuItem value="lowest">{t('reviews.lowest')}</MenuItem>
                 </Select>
               </FormControl>
             </Stack>
@@ -177,7 +182,7 @@ export function ReviewsPage() {
             {r.response ? (
               <Stack mt={1.5} p={1.5} bgcolor="#F8FAFC" borderRadius={2} spacing={0.5}>
                 <Typography variant="caption" fontWeight={700} color="primary">
-                  Your response
+                  {t('reviews.yourResponse')}
                 </Typography>
                 <Typography variant="body2">{r.response}</Typography>
               </Stack>
@@ -191,7 +196,7 @@ export function ReviewsPage() {
                   setResponse('');
                 }}
               >
-                Respond
+                {t('reviews.respond')}
               </Button>
             )}
           </CardContent>
@@ -202,27 +207,27 @@ export function ReviewsPage() {
         <Card>
           <CardContent>
             <Typography color="text.secondary" textAlign="center">
-              No reviews match your filters.
+              {t('reviews.empty')}
             </Typography>
           </CardContent>
         </Card>
       )}
 
       <Dialog open={!!activeId} onClose={() => setActiveId(null)} fullWidth maxWidth="sm">
-        <DialogTitle>Respond to Review</DialogTitle>
+        <DialogTitle>{t('reviews.respondTitle')}</DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
             multiline
             minRows={3}
             sx={{ mt: 1 }}
-            placeholder="Thank the customer and address their feedback…"
+            placeholder={t('reviews.respondPlaceholder')}
             value={response}
             onChange={(e) => setResponse(e.target.value)}
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setActiveId(null)}>Cancel</Button>
+          <Button onClick={() => setActiveId(null)}>{t('common.cancel')}</Button>
           <Button
             variant="contained"
             disabled={!response.trim()}
@@ -231,7 +236,7 @@ export function ReviewsPage() {
               setActiveId(null);
             }}
           >
-            Send Response
+            {t('reviews.sendResponse')}
           </Button>
         </DialogActions>
       </Dialog>
