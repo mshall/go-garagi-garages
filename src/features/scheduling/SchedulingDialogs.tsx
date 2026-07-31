@@ -1,11 +1,14 @@
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Radio from '@mui/material/Radio';
@@ -14,13 +17,12 @@ import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import dayjs from 'dayjs';
-import { useMemo, useState } from 'react';
-import {
-  bookingSlotParts,
-  listSuggestableSlots,
-} from '../../domain/availability';
-import type { BlockReason, Booking } from '../../domain/types';
+import { useEffect, useMemo, useState } from 'react';
+import { bookingSlotParts } from '../../domain/availability';
+import type { BlockReason, Booking, SlotStatus } from '../../domain/types';
 import { useGarageStore } from '../../store/useGarageStore';
 
 function BookingSummary({ booking }: { booking: Booking }) {
@@ -57,40 +59,208 @@ function BookingSummary({ booking }: { booking: Booking }) {
   );
 }
 
-function TimeSlotPicker({
+const pickerStyles: Record<
+  SlotStatus,
+  { bgcolor: string; color: string; label: string }
+> = {
+  available: { bgcolor: '#F8FAFC', color: '#64748B', label: 'Free' },
+  booked: { bgcolor: '#E2E8F0', color: '#64748B', label: 'Busy' },
+  blocked: { bgcolor: '#FED7AA', color: '#9A3412', label: 'Blocked' },
+  conflict: { bgcolor: '#FEF3C7', color: '#B45309', label: 'Conflict' },
+};
+
+function slotIso(date: string, hour: number) {
+  return dayjs(
+    `${date}T${String(hour).padStart(2, '0')}:00:00+04:00`,
+  ).toISOString();
+}
+
+/** Calendar grid to pick an available booking time for suggestions / moves */
+function SuggestTimeCalendar({
   value,
   onChange,
+  excludeBookingId,
+  highlightIso,
 }: {
   value: string;
   onChange: (iso: string) => void;
+  /** Booking being moved — its current slot is marked but not selectable as “new” */
+  excludeBookingId?: string;
+  /** Original requested time to highlight as context */
+  highlightIso?: string;
 }) {
   const slots = useGarageStore((s) => s.slots);
   const bookings = useGarageStore((s) => s.bookings);
-  const options = useMemo(
-    () => listSuggestableSlots(slots, bookings, '2026-08-01'),
-    [slots, bookings],
-  );
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const highlight = highlightIso ? bookingSlotParts(highlightIso) : null;
+  const selected = value ? bookingSlotParts(value) : null;
+
+  const days = useMemo(() => {
+    const base = dayjs('2026-08-01').add(weekOffset * 7, 'day');
+    return [0, 1, 2, 3, 4].map((i) => base.add(i, 'day'));
+  }, [weekOffset]);
+
+  const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+  const rangeLabel = `${days[0].format('MMM D')} – ${days[days.length - 1].format('MMM D')}`;
+
+  const isSelectable = (date: string, hour: number, status: SlotStatus) => {
+    if (status === 'available') return true;
+    if (status === 'blocked') return false;
+    const at = bookings.filter((b) => {
+      const p = bookingSlotParts(b.proposedAt || b.scheduledAt);
+      return (
+        p.date === date &&
+        p.hour === hour &&
+        b.id !== excludeBookingId &&
+        ['pending', 'confirmed', 'awaiting_customer', 'rescheduled', 'in_progress'].includes(
+          b.status,
+        )
+      );
+    });
+    return at.length === 0 && status !== 'conflict';
+  };
 
   return (
-    <FormControl fullWidth size="small">
-      <InputLabel>Suggested time</InputLabel>
-      <Select
-        label="Suggested time"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {options.map((o) => {
-          const iso = dayjs(
-            `${o.date}T${String(o.hour).padStart(2, '0')}:00:00+04:00`,
-          ).toISOString();
-          return (
-            <MenuItem key={`${o.date}-${o.hour}`} value={iso}>
-              {o.label}
-            </MenuItem>
-          );
-        })}
-      </Select>
-    </FormControl>
+    <Stack spacing={1.5}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between">
+        <Typography variant="subtitle2" fontWeight={700}>
+          Select a free time on the calendar
+        </Typography>
+        <Stack direction="row" alignItems="center" spacing={0.5}>
+          <IconButton
+            size="small"
+            onClick={() => setWeekOffset((w) => w - 1)}
+            aria-label="Previous week"
+          >
+            <ChevronLeftIcon fontSize="small" />
+          </IconButton>
+          <Typography variant="caption" fontWeight={700} sx={{ minWidth: 110, textAlign: 'center' }}>
+            {rangeLabel}
+          </Typography>
+          <IconButton
+            size="small"
+            onClick={() => setWeekOffset((w) => w + 1)}
+            aria-label="Next week"
+          >
+            <ChevronRightIcon fontSize="small" />
+          </IconButton>
+        </Stack>
+      </Stack>
+
+      {value && (
+        <Alert severity="success" sx={{ py: 0.5 }}>
+          Suggested:{' '}
+          <strong>{dayjs(value).format('ddd D MMM · h:mm A')}</strong>
+        </Alert>
+      )}
+
+      <Box sx={{ overflowX: 'auto', pb: 0.5 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: `52px repeat(${days.length}, minmax(72px, 1fr))`,
+            gap: 0.75,
+            minWidth: 420,
+          }}
+        >
+          <Box />
+          {days.map((d) => (
+            <Typography
+              key={d.toString()}
+              variant="caption"
+              fontWeight={700}
+              textAlign="center"
+            >
+              {d.format('ddd D')}
+            </Typography>
+          ))}
+
+          {hours.map((hour) => (
+            <Box key={hour} sx={{ display: 'contents' }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ alignSelf: 'center', fontSize: 11 }}
+              >
+                {dayjs().hour(hour).minute(0).format('h A')}
+              </Typography>
+              {days.map((d) => {
+                const date = d.format('YYYY-MM-DD');
+                const slot = slots.find((s) => s.date === date && s.hour === hour);
+                const status = slot?.status ?? 'available';
+                const style = pickerStyles[status];
+                const selectable = isSelectable(date, hour, status);
+                const isSelected =
+                  selected?.date === date && selected?.hour === hour;
+                const isOriginal =
+                  highlight?.date === date && highlight?.hour === hour;
+                const iso = slotIso(date, hour);
+
+                return (
+                  <Chip
+                    key={`${date}-${hour}`}
+                    size="small"
+                    label={
+                      isSelected
+                        ? 'Selected'
+                        : isOriginal
+                          ? 'Current'
+                          : selectable
+                            ? style.label
+                            : style.label
+                    }
+                    onClick={() => {
+                      if (!selectable) return;
+                      onChange(iso);
+                    }}
+                    sx={{
+                      width: '100%',
+                      height: 30,
+                      borderRadius: 1.5,
+                      fontWeight: 600,
+                      fontSize: 11,
+                      bgcolor: isSelected
+                        ? 'primary.main'
+                        : isOriginal
+                          ? '#DBEAFE'
+                          : style.bgcolor,
+                      color: isSelected
+                        ? '#fff'
+                        : isOriginal
+                          ? '#1D4ED8'
+                          : style.color,
+                      cursor: selectable ? 'pointer' : 'not-allowed',
+                      opacity: selectable || isSelected || isOriginal ? 1 : 0.55,
+                      border: isSelected
+                        ? '2px solid'
+                        : isOriginal
+                          ? '1px solid #93C5FD'
+                          : selectable
+                            ? '1px solid #CBD5E1'
+                            : '1px solid transparent',
+                      borderColor: isSelected ? 'primary.dark' : undefined,
+                      '&:hover': selectable
+                        ? {
+                            bgcolor: isSelected ? 'primary.dark' : '#E0F2FE',
+                          }
+                        : undefined,
+                    }}
+                  />
+                );
+              })}
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        <Typography variant="caption" color="text.secondary">
+          Tap a free cell to propose that time. Busy / blocked / conflict slots stay
+          unavailable.
+        </Typography>
+      </Stack>
+    </Stack>
   );
 }
 
@@ -112,10 +282,22 @@ export function ConfirmBookingDialog({
 
   const conflicts = booking ? getConflictsForBooking(booking.id) : [];
 
+  useEffect(() => {
+    if (open) {
+      setMode(conflicts.length > 0 ? 'suggest' : 'accept');
+      setSuggested('');
+    }
+  }, [open, booking?.id, conflicts.length]);
+
   if (!booking) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth={mode === 'suggest' ? 'md' : 'sm'}
+    >
       <DialogTitle>Confirm booking</DialogTitle>
       <DialogContent>
         <Stack spacing={2} mt={1}>
@@ -129,7 +311,10 @@ export function ConfirmBookingDialog({
           )}
           <RadioGroup
             value={mode}
-            onChange={(_, v) => setMode(v as 'accept' | 'suggest')}
+            onChange={(_, v) => {
+              setMode(v as 'accept' | 'suggest');
+              if (v === 'accept') setSuggested('');
+            }}
           >
             <FormControlLabel
               value="accept"
@@ -147,7 +332,12 @@ export function ConfirmBookingDialog({
             />
           </RadioGroup>
           {mode === 'suggest' && (
-            <TimeSlotPicker value={suggested} onChange={setSuggested} />
+            <SuggestTimeCalendar
+              value={suggested}
+              onChange={setSuggested}
+              excludeBookingId={booking.id}
+              highlightIso={booking.scheduledAt}
+            />
           )}
         </Stack>
       </DialogContent>
@@ -201,13 +391,35 @@ export function ConflictResolveDialog({
       ['pending', 'confirmed', 'awaiting_customer'].includes(b.status)
     );
   });
-  const [mode, setMode] = useState<'accept_both' | 'reschedule'>('accept_both');
-  const [targetId, setTargetId] = useState(at.find((b) => b.status !== 'confirmed')?.id ?? at[0]?.id ?? '');
+  const defaultTarget =
+    at.find((b) => b.status !== 'confirmed')?.id ?? at[0]?.id ?? '';
+  const [mode, setMode] = useState<'accept_both' | 'reschedule'>('reschedule');
+  const [targetId, setTargetId] = useState(defaultTarget);
   const [suggested, setSuggested] = useState('');
   const [notify, setNotify] = useState(true);
 
+  useEffect(() => {
+    if (open) {
+      setMode('reschedule');
+      setTargetId(
+        at.find((b) => b.status !== 'confirmed')?.id ?? at[0]?.id ?? '',
+      );
+      setSuggested('');
+      setNotify(true);
+    }
+    // only reset when dialog opens for a slot
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, date, hour]);
+
+  const targetBooking = at.find((b) => b.id === targetId) ?? at[0];
+
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth={mode === 'reschedule' ? 'md' : 'sm'}
+    >
       <DialogTitle>Resolve scheduling conflict</DialogTitle>
       <DialogContent>
         <Stack spacing={2} mt={1}>
@@ -215,14 +427,18 @@ export function ConflictResolveDialog({
             {dayjs(`${date}T${String(hour).padStart(2, '0')}:00:00`).format(
               'ddd D MMM · h:mm A',
             )}{' '}
-            has overlapping bookings. Accept both at the same time, or move one.
+            has overlapping bookings. Accept both at the same time, or pick another
+            time from the calendar.
           </Alert>
           {at.map((b) => (
             <BookingSummary key={b.id} booking={b} />
           ))}
           <RadioGroup
             value={mode}
-            onChange={(_, v) => setMode(v as 'accept_both' | 'reschedule')}
+            onChange={(_, v) => {
+              setMode(v as 'accept_both' | 'reschedule');
+              if (v === 'accept_both') setSuggested('');
+            }}
           >
             <FormControlLabel
               value="accept_both"
@@ -232,7 +448,7 @@ export function ConflictResolveDialog({
             <FormControlLabel
               value="reschedule"
               control={<Radio />}
-              label="Suggest / move one booking to another availability"
+              label="Suggest / move one booking — pick from calendar"
             />
           </RadioGroup>
           {mode === 'reschedule' && (
@@ -242,7 +458,10 @@ export function ConflictResolveDialog({
                 <Select
                   label="Booking to move"
                   value={targetId}
-                  onChange={(e) => setTargetId(e.target.value)}
+                  onChange={(e) => {
+                    setTargetId(e.target.value);
+                    setSuggested('');
+                  }}
                 >
                   {at.map((b) => (
                     <MenuItem key={b.id} value={b.id}>
@@ -251,7 +470,16 @@ export function ConflictResolveDialog({
                   ))}
                 </Select>
               </FormControl>
-              <TimeSlotPicker value={suggested} onChange={setSuggested} />
+              <SuggestTimeCalendar
+                value={suggested}
+                onChange={setSuggested}
+                excludeBookingId={targetId}
+                highlightIso={
+                  targetBooking
+                    ? targetBooking.proposedAt || targetBooking.scheduledAt
+                    : undefined
+                }
+              />
               <RadioGroup
                 row
                 value={notify ? 'notify' : 'direct'}
@@ -404,10 +632,17 @@ export function BookedSlotDialog({
   const [mode, setMode] = useState<'suggest' | 'direct'>('suggest');
   const [suggested, setSuggested] = useState('');
 
+  useEffect(() => {
+    if (open) {
+      setMode('suggest');
+      setSuggested('');
+    }
+  }, [open, booking?.id]);
+
   if (!booking) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>Manage booked slot</DialogTitle>
       <DialogContent>
         <Stack spacing={2} mt={1}>
@@ -430,7 +665,12 @@ export function BookedSlotDialog({
               label="Move directly and notify customer"
             />
           </RadioGroup>
-          <TimeSlotPicker value={suggested} onChange={setSuggested} />
+          <SuggestTimeCalendar
+            value={suggested}
+            onChange={setSuggested}
+            excludeBookingId={booking.id}
+            highlightIso={booking.proposedAt || booking.scheduledAt}
+          />
           {booking.status === 'awaiting_customer' && booking.proposedAt && (
             <Button
               variant="outlined"
