@@ -5,10 +5,11 @@
 ### System Architecture · Data Model · APIs · Infrastructure
 
 ![Status](https://img.shields.io/badge/Status-Proposed-yellow)
-![Version](https://img.shields.io/badge/Version-1.0-blue)
+![Version](https://img.shields.io/badge/Version-1.1-blue)
 ![Stack](https://img.shields.io/badge/Stack-TypeScript_·_Node_·_React_·_React_Native-3178c6)
 ![Cloud](https://img.shields.io/badge/Cloud-AWS-ff9900)
 ![Companion](https://img.shields.io/badge/Companion-Go_Garagi_PRD.md-brightgreen)
+![Garage](https://img.shields.io/badge/Garage_Web_Prototype-MUI_MD3-success)
 
 </div>
 
@@ -20,17 +21,19 @@
 |---|---|
 | **Title** | Go Garagi — Technical Design (RFC) |
 | **Type** | Request for Comments / Architecture Design |
-| **Version** | 1.0 |
+| **Version** | 1.1 |
 | **Status** | 🟡 Proposed → seeking review sign-off |
 | **Author** | Engineering / Architecture |
 | **Reviewers** | Eng Lead · Platform · Security · SRE · Product |
 | **Companion** | `Go_Garagi_PRD.md` (product requirements) |
+| **Garage prototype repo** | `go-garagi-garages` (this codebase) — client-only Garage OS demo |
 | **Mandated stack** | TypeScript + Node.js (backend) · React (web) → React Native (mobile) · AWS |
 
 ### Change Log
 | Ver | Date | Change |
 |---|---|---|
 | 1.0 | — | Initial full technical design: architecture, domains, data model, APIs, infra, security, observability, DevOps, milestones |
+| **1.1** | 2026-08-01 | Garage prototype stack (MUI MD3, Zustand persist, 6-locale i18n); booking conflict / suggest-time model; in-app notification inbox; ADR-11 |
 
 ---
 
@@ -272,7 +275,7 @@ graph TD
 | **Garage Registry** | Onboarding, profile, services, hours, gallery, verification, approval | Garage, Service, OperatingHours, Media, VerificationTier |
 | **Discovery & Search** | Geo search, filters, ranking, map pins | (read model / index) |
 | **Quotation Engine** | RFP lifecycle, PII masking, quote submission, expiry, re-broadcast | QuoteRequest, QuoteResponse, RfpGarage |
-| **Booking** | Slots, calendar, statuses, reschedule | Booking, Slot, BookingNote |
+| **Booking** | Slots, calendar, statuses, reschedule, conflict detection, suggest-time (`awaiting_customer`) | Booking, CalendarSlot, CustomerNotice, BookingNote |
 | **Marketplace / Supplier** | Seller onboarding & store profile, parts catalog & fitment, listings, orders/leads, seller reviews & payouts | Seller, Store, Part, Listing, Fitment, PartOrder |
 | **Payments/Ledger** | Intents, escrow, payouts (garage **and** supplier), double-entry ledger, refunds | PaymentIntent, LedgerEntry, Payout, Refund, Dispute |
 | **Messaging** | Threads, messages, presence, after-hours (customer↔garage **and** customer↔supplier) | Thread, Message |
@@ -303,15 +306,17 @@ graph TD
 ### Frontend
 | Concern | Choice | Rationale |
 |---|---|---|
-| Web | **React 18 + Vite + TypeScript** | Fast DX; base for RN reuse |
+| Web (target platform) | **React + Vite + TypeScript** | Fast DX; base for RN reuse |
+| Web (Garage prototype — as-built) | **React 19 + Vite + MUI 7 (MD3)** + Emotion + stylis-plugin-rtl | Shipped Garage OS demo; see ADR-11 for design-system convergence |
 | Mobile | **React Native (Expo)** | Convert web logic; OTA updates |
-| Styling | Tailwind (web) / NativeWind (RN) | Shared token system |
-| State (server) | **TanStack Query** | Caching, retries, sync |
-| State (client) | Zustand | Lightweight |
+| Styling (platform packages) | Tailwind / NativeWind tokens in `@gogaragi/ui-*` | Long-term shared design system |
+| State (server) | **TanStack Query** (when API lands) | Caching, retries, sync |
+| State (client) | Zustand (+ persist for garage demo: `go-garagi-garage-v6`) | Lightweight; seed until BFF exists |
 | Forms | React Hook Form + Zod | Shared validation with backend |
 | Maps | react-native-maps / MapLibre + AWS Location | Discovery |
-| i18n | i18next + RTL support | EN/AR |
-| Design system | Shared component lib as a **published package** (`@gogaragi/ui-*`) | Consistency across 3 separate app repos |
+| i18n | i18next + RTL | Garage prototype: **EN / AR / ES / FR / RU / DE**; platform packages start EN/AR |
+| Design system | Shared component lib as a **published package** (`@gogaragi/ui-*`) | Consistency across client repos; garage currently uses local `src/theme/` + MUI |
+| Domain share | Local `src/domain/` → extract to `@gogaragi/domain` | Pure types, booking/quote machines, availability, formatters |
 
 ### Infrastructure (AWS)
 | Concern | Service |
@@ -411,7 +416,7 @@ go-garagi-customer/            # (garage, supplier, insurance & admin mirror thi
 | `@gogaragi/ui-core` | Headless behavior + **design tokens** | all 5 apps |
 | `@gogaragi/ui-web` | Web components (Tailwind) | garage, supplier, insurance, admin |
 | `@gogaragi/ui-native` | RN components (NativeWind) | customer |
-| `@gogaragi/i18n` | EN/AR resource bundles | all 5 apps |
+| `@gogaragi/i18n` | Locale bundles (EN/AR MVP platform; garage already EN/AR/ES/FR/RU/DE) | all 5 apps |
 | `@gogaragi/config` | Shared eslint / tsconfig / tailwind presets | all repos |
 
 ### How Code Is Shared Across Separate Repos
@@ -548,6 +553,19 @@ erDiagram
       enum type
       enum status
       timestamptz slot_start
+      timestamptz proposed_at
+      bool customer_requested_despite_conflict
+      json last_customer_notice
+    }
+    CALENDAR_SLOT {
+      uuid id PK
+      uuid garage_id FK
+      date day
+      int hour
+      enum status
+      enum block_reason
+      uuid[] booking_ids
+      text note
     }
     PAYMENT_INTENT {
       uuid id PK
@@ -615,6 +633,18 @@ erDiagram
 | `POST` | `/api/v1/media/presign` | Get S3 presigned upload URL |
 | `POST` | `/api/v1/admin/garages/{id}/approve` | Admin approval |
 | `GET` | `/api/v1/admin/analytics` | Ops metrics |
+| `POST` | `/api/v1/garages/{id}/bookings/{bookingId}/suggest` | Propose alternate time → `awaiting_customer` |
+| `POST` | `/api/v1/garages/{id}/bookings/{bookingId}/accept` | Confirm (optional `forceDespiteConflict`) |
+| `POST` | `/api/v1/garages/{id}/bookings/{bookingId}/reject` | Reject with reason |
+| `POST` | `/api/v1/garages/{id}/slots/block` | General or booking-linked block |
+| `DELETE` | `/api/v1/garages/{id}/slots/{date}/{hour}` | Unblock |
+| `POST` | `/api/v1/garages/{id}/conflicts/resolve` | Accept-both or reschedule one |
+
+**Booking status enum (garage-aligned):** `pending` · `awaiting_customer` · `confirmed` · `rejected` · `rescheduled` · `in_progress` · `completed` · `cancelled`
+
+**Calendar slot status enum:** `available` · `booked` · `blocked` · `conflict`
+
+> Garage web prototype implements these flows client-side against Zustand seed data until the BFF exists.
 
 ### Example — Create RFP (request/response)
 
@@ -758,6 +788,33 @@ sequenceDiagram
     RFP-->>U: push claim status (approved → in-repair → completed)
 ```
 
+### 12.6 Garage — conflict resolve / suggest alternate time
+
+```mermaid
+sequenceDiagram
+    actor G as Garage App
+    participant API
+    participant BKG as Booking
+    participant N as Notifications
+    participant U as Customer App
+    G->>API: GET calendar slots (rebuild from bookings + blocks)
+    Note over G: Conflict cell or pending booking with overlap
+    alt Accept both
+        G->>API: POST /conflicts/resolve {mode: accept_both}
+        API->>BKG: confirm overlapping bookings
+    else Suggest new time
+        G->>G: Calendar suggest picker (free slots only)
+        G->>API: POST /bookings/{id}/suggest {proposedAt}
+        API->>BKG: status=awaiting_customer, set proposed_at
+        API->>N: notify customer of proposed time
+        N-->>U: push + in-app
+        U->>API: confirm proposal
+        API->>BKG: status=confirmed, slot_start=proposed_at
+    end
+```
+
+Pure client helpers already live in the garage prototype (`src/domain/availability.ts`, `bookingMachine.ts`) for RN reuse.
+
 ---
 
 ## 13. 🔎 Search & Geo-Discovery
@@ -842,17 +899,19 @@ stateDiagram-v2
 
 - **Channels:** Push (FCM/APNs via Pinpoint/SNS), SMS/WhatsApp (Twilio/Unifonic), Email (SES), In-app.
 - **Trigger model:** domain events on the bus → Notification service → channel routing by user preference + locale.
-- **Templates:** localized (EN/AR), versioned; transactional priority queue vs. marketing.
+- **Templates:** localized (EN/AR platform MVP; garage UI already 6 locales), versioned; transactional priority queue vs. marketing.
 - **Reliability:** retries with backoff via SQS DLQ; delivery logged.
+- **Garage in-app inbox (prototype):** derived client-side from pending bookings, today's reminders, new quote RFPs, and unanswered reviews (`src/domain/notifications.ts`); read-state persisted locally until server preferences exist.
 
 | Event | Channels |
 |---|---|
 | OTP | SMS |
 | Quote received | Push + in-app |
-| Booking confirmed/reschedule | Push + email |
+| Booking confirmed/reschedule / suggested time | Push + email + in-app |
 | Chat message (offline) | Push |
 | Payout processed | Push + email |
 | Garage approval | Push + email |
+| Pending booking / unanswered review (garage) | In-app (prototype) → push when API lands |
 
 ---
 
@@ -1054,6 +1113,7 @@ Cost controls: Savings Plans/Reserved for steady compute, S3 lifecycle tiering, 
 | **ADR-6** | **ECS Fargate** | EKS, Lambda-only | Simplicity vs. Kubernetes ops; predictable for long-lived WS |
 | **ADR-7** | **React Native (Expo)** | Native Swift/Kotlin, Flutter | Mandated React reuse; shared logic; OTA velocity |
 | **ADR-8** | **Double-entry ledger in Postgres** | PSP-as-truth, event-sourced ledger | Auditable correctness for escrow; simpler than full ES at MVP |
+| **ADR-11** | **MUI 7 MD3 for Garage web prototype** | Tailwind/`@gogaragi/ui-web` from day 1 | Ships Garage OS UX quickly against Visily MD3 samples; converge to shared token package later without rewriting domain logic |
 | **ADR-9** | **`me-central-1` single region** | Multi-region active-active | Residency + latency; complexity deferred |
 | **ADR-10** | **Separate repo per client app** (customer / garage / supplier / insurance / admin) + backend + shared-packages repo | Single monorepo (Nx/Turborepo) | Independent team ownership, release cadence & CI/CD; smaller blast radius; per-app access control (e.g., insurer & supplier code isolated). Shared code via **published, versioned packages** (CodeArtifact) + automated dependency PRs (Renovate) + changesets releases. Accepts cross-repo coordination overhead in exchange for autonomy |
 
@@ -1108,8 +1168,22 @@ gantt
 | 99.9% availability | Multi-AZ RDS, ≥2 tasks/tier, blue-green, health checks |
 | PII masking | Authz-gated projections in Quotation Engine |
 | PCI SAQ-A | PSP-hosted card fields, tokenization, no PAN storage |
-| RTL/AR | i18next + NativeWind/Tailwind RTL, localized templates |
+| RTL/AR | i18next + NativeWind/Tailwind RTL (platform); garage prototype uses Emotion + stylis-plugin-rtl |
+| Multi-locale garage UI | i18next resources EN/AR/ES/FR/RU/DE under `src/i18n/locales/` |
 | Observability | OpenTelemetry + CloudWatch/X-Ray + SLO alerts |
+
+### Garage web prototype — as-built map
+
+| Concern | Location in `go-garagi-garages` |
+|---|---|
+| Domain (RN-ready) | `src/domain/` — types, `bookingMachine`, `availability`, `notifications`, `format` |
+| Seed / demo data | `src/data/seed.ts` (Al Quoz Auto Care) |
+| Client store | `src/store/useGarageStore.ts` (Zustand persist `go-garagi-garage-v6`) |
+| Screens | `src/features/*` |
+| i18n | `src/i18n/` + language persist `go-garagi-lang` |
+| Theme | `src/theme/md3Theme.ts` |
+| UI samples | `Docs/Sample Screens/` |
+| Demo login | `khalid@alquozgarage.ae` / `demo1234` |
 
 ### Glossary
 | Term | Meaning |
@@ -1120,15 +1194,17 @@ gantt
 | **CDC** | Change Data Capture (Postgres → OpenSearch sync) |
 | **ADR** | Architecture Decision Record |
 | **SLO/SLI** | Service Level Objective / Indicator |
+| **AwaitingCustomer** | Booking waiting on customer to accept garage-proposed time |
+| **Conflict slot** | Calendar cell with overlapping active bookings |
 
 ### Traceability
-Each PRD epic `GG-E#` maps to a domain module in §7; user stories `US-###` are realized by the endpoints in §11 and flows in §12.
+Each PRD epic `GG-E#` maps to a domain module in §7; user stories `US-###` are realized by the endpoints in §11 and flows in §12. Garage prototype stories US-082–088 map to `src/features/` until BFF wiring.
 
 <div align="center">
 
 ---
 
-**End of RFC — Go Garagi v1.0**
+**End of RFC — Go Garagi v1.1**
 *Companion product spec: `Go_Garagi_PRD.md`*
 
 </div>

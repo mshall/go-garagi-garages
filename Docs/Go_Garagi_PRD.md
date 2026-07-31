@@ -7,10 +7,11 @@
 **Car Service · Car Wash · Accident Repair Bidding · Insurance Networks · Spare-Parts Marketplace · Recovery**
 
 ![Status](https://img.shields.io/badge/Status-Approved_for_Build-brightgreen)
-![Version](https://img.shields.io/badge/Version-1.0-blue)
+![Version](https://img.shields.io/badge/Version-1.1-blue)
 ![Scope](https://img.shields.io/badge/Scope-MVP_+_Roadmap-orange)
 ![Platform](https://img.shields.io/badge/Platform-iOS_·_Android_·_Web-lightgrey)
 ![Region](https://img.shields.io/badge/Launch-UAE_→_GCC_→_Global-informational)
+![Garage](https://img.shields.io/badge/Garage_Web_Prototype-Shipped-success)
 
 </div>
 
@@ -22,11 +23,12 @@
 |---|---|
 | **Product** | Go Garagi Super-App |
 | **Document Type** | Product Requirements Document (PRD) |
-| **Version** | 1.0 |
+| **Version** | 1.1 |
 | **Status** | ✅ Approved for Build |
 | **Author** | Product & Engineering |
 | **Audience** | Founders · Product · Engineering · Design · Ops · Investors |
 | **Companion Doc** | `Go_Garagi_RFC.md` (Technical Design & Architecture) |
+| **Garage prototype** | `go-garagi-garages` — local Garage OS demo (see §11 + Appendix) |
 | **Confidentiality** | Internal — Commercially Sensitive |
 
 ### Change Log
@@ -34,7 +36,8 @@
 | Ver | Date | Author | Change |
 |---|---|---|---|
 | 0.1 | — | Product | Initial MVP feature list & wireframe notes |
-| **1.0** | — | Product & Eng | Full production-ready PRD: personas, epics, user stories, journeys, flow diagrams, metrics, monetization, compliance, roadmap |
+| 1.0 | — | Product & Eng | Full production-ready PRD: personas, epics, user stories, journeys, flow diagrams, metrics, monetization, compliance, roadmap |
+| **1.1** | 2026-08-01 | Product & Eng | Garage web prototype parity: expanded Garage OS screens, conflict scheduling + suggest-time, `awaiting_customer`, in-app notifications, reports/earnings filters, 6-locale i18n + RTL |
 
 > [!NOTE]
 > This PRD is the **single source of truth** for MVP delivery. Every epic carries user stories with **Gherkin acceptance criteria**, priority (MoSCoW), and success metrics. The technical realization of these requirements lives in the companion **RFC**.
@@ -91,7 +94,7 @@ Go Garagi ships as **five separate applications**, one per audience, each with i
 | # | App | Platform | Who | Core Value |
 |---|---|---|---|---|
 | 1 | 📱 **Customer App** | iOS / Android | Car owners | Discover garages, get accident quotes, book service/wash, buy parts, chat |
-| 2 | 🔧 **Garage App** | Web | Garage owners/staff | Receive quote RFPs, respond, manage bookings & reviews, payouts |
+| 2 | 🔧 **Garage App** | Web | Garage owners/staff | Garage OS: onboarding, dashboard, bookings (incl. conflict / suggest time), quotes, calendar, services, promotions, reviews, earnings, reports, multi-language UI |
 | 3 | 📦 **Supplier App** | Web | Parts sellers | List & manage parts inventory, receive orders/leads, chat, payouts |
 | 4 | 🛡️ **Insurance App** | Web | Insurance partners | Manage approved-garage networks, view claim-linked quotes, claim status |
 | 5 | ⚙️ **Admin App** | Web | Platform ops | Approve supply, moderate content, analytics, platform settings |
@@ -369,16 +372,27 @@ graph LR
 
 ### Garage App (Web)
 
-| Feature | Priority | In MVP |
-|---|:--:|:--:|
-| Registration, profile, service catalog, hours | **Must** | ✅ |
-| Admin approval gate | **Must** | ✅ |
-| Manage quote requests (New/Responded/Won/Lost) | **Must** | ✅ |
-| Submit quote (price, ETA, pickup, notes) | **Must** | ✅ |
-| Manage bookings (calendar) | **Must** | ✅ |
-| Reviews (view + respond) | **Should** | ✅ |
-| Payouts & earnings view | **Should** | ✅ |
-| Staff sub-accounts / roles | Could | ⚠️ Basic |
+| Feature | Priority | In MVP | Prototype |
+|---|:--:|:--:|:--:|
+| Registration, profile, service catalog, hours | **Must** | ✅ | ✅ |
+| Admin approval gate | **Must** | ✅ | ✅ (simulate) |
+| Dashboard KPIs + quick access | **Must** | ✅ | ✅ |
+| Booking inbox (accept / reject / suggest time) | **Must** | ✅ | ✅ |
+| Conflict scheduling (detect, accept-both, reschedule) | **Must** | ✅ | ✅ |
+| Calendar availability (available / booked / blocked / conflict) | **Must** | ✅ | ✅ |
+| Manage quote requests (New/Responded/Won/Lost) | **Must** | ✅ | ✅ |
+| Submit quote (price, ETA, pickup, notes) | **Must** | ✅ | ✅ |
+| Services & pricing CRUD | **Must** | ✅ | ✅ |
+| Promotions manager | **Should** | ✅ | ✅ |
+| Reviews (view + respond + filters) | **Should** | ✅ | ✅ |
+| Payouts & earnings (search / filters) | **Should** | ✅ | ✅ |
+| Reports (period + charts) | **Should** | ✅ | ✅ |
+| In-app notification inbox | **Must** | ✅ | ✅ (derived) |
+| Multi-language UI (EN/AR/ES/FR/RU/DE) + Arabic RTL | **Must** | ✅ | ✅ |
+| Staff sub-accounts / roles | Could | ⚠️ Basic | ⛔ |
+
+> [!NOTE]
+> **Garage web prototype** (`go-garagi-garages`) ships the Garage OS surfaces above against seeded local state. Backend APIs, real chat, live payments/escrow, and staff RBAC remain platform MVP work per the RFC.
 
 ### Supplier App (Web) — Parts Sellers
 
@@ -616,15 +630,27 @@ Feature: Multi-method registration
 
 **US-080 (Must) — Garage onboarding & approval** — business details, location pin, services multi-select, hours, insurers, gallery; goes live only after admin approval.
 **US-081 (Must) — Manage quote requests** — tabs New/Responded/Lost/Won; expand to see masked customer, car, insurer, media; submit quote (price, ETA, pickup y/n, notes).
-**US-082 (Must) — Manage bookings** — weekly/monthly calendar; statuses Pending/Confirmed/Rescheduled/Completed; reschedule with slot picker; internal notes.
-**US-083 (Should) — Reviews** — view, respond, report abuse.
-**US-084 (Should) — Earnings & payouts** — balance, payout history, per-job breakdown.
+**US-082 (Must) — Manage bookings** — booking inbox with Pending / Awaiting customer / Confirmed / Rejected; accept, reject with reason, or suggest another time; calendar week view with Available / Booked / Blocked / Conflict slots.
+**US-082a (Must) — Conflict scheduling** — when a requested slot overlaps another active booking (or customer knowingly booked a busy slot), garage can accept both (double-book) or move one booking; conflicts surface as first-class calendar cells.
+**US-082b (Must) — Suggest alternative time** — garage picks a free slot from an interactive **calendar suggest picker**; booking status becomes `AwaitingCustomer` with `proposedAt` until the customer confirms (or garage moves again).
+**US-083 (Should) — Reviews** — view, filter/sort, respond, report abuse.
+**US-084 (Should) — Earnings & payouts** — available/held/pending balances, searchable payout history, status/category/period/amount filters, per-job gross/fee/net breakdown.
+**US-085 (Should) — Garage reports** — time-range KPIs (completed jobs, quote win rate, GMV, net, avg rating) with charts for bookings/quotes by status, earnings trend, rating distribution, demand by service.
+**US-086 (Must) — Services & promotions** — CRUD service offerings (name, category, duration, price); create percentage/fixed promotions with date range.
+**US-087 (Must) — In-app notification inbox** — derived alerts for pending bookings, today's reminders, new quote RFPs, unanswered reviews; mark read / mark all.
+**US-088 (Must) — Localization** — garage UI fully translated EN / AR / ES / FR / RU / DE; Arabic RTL layout; locale-aware dates/currency display.
 ```gherkin
   Scenario: Respond to RFP
     Given a new accident RFP appears in "New"
     When I submit a price, completion time and pickup option
     Then the driver receives my quote in real time
     And the request moves to "Responded"
+
+  Scenario: Suggest another time on conflict
+    Given a pending booking conflicts with another booking at the same slot
+    When I choose "Suggest another time" and tap a free calendar cell
+    Then the booking status becomes "Awaiting customer"
+    And the customer is notified of the proposed time
 ```
 
 ---
@@ -901,19 +927,28 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
     [*] --> Pending
-    Pending --> Confirmed: garage confirms
+    Pending --> Confirmed: garage confirms (incl. force despite conflict)
+    Pending --> Rejected: garage rejects with reason
+    Pending --> AwaitingCustomer: garage suggests alternate time
     Pending --> Cancelled: driver/garage cancels
+    AwaitingCustomer --> Confirmed: customer accepts proposal
+    AwaitingCustomer --> Pending: customer declines / garage revises
+    AwaitingCustomer --> Cancelled: cancelled while awaiting
     Confirmed --> Rescheduled: slot changed
+    Confirmed --> AwaitingCustomer: garage proposes new time
     Rescheduled --> Confirmed
     Confirmed --> InProgress: check-in
     InProgress --> Completed: work done
     Completed --> Reviewed: driver reviews
     Completed --> Disputed: driver disputes
     Disputed --> Resolved: admin mediates
+    Rejected --> [*]
     Cancelled --> [*]
     Reviewed --> [*]
     Resolved --> [*]
 ```
+
+> **Conflict note:** Customers may request a busy/conflict-allowed slot; those land as Pending (or Conflict on the garage calendar) until the garage confirms, rejects, or suggests another time.
 
 ### 10.3 Payment / Escrow — Sequence
 
@@ -1054,11 +1089,20 @@ graph TD
 
 | # | Screen | Key elements |
 |---|---|---|
-| G1 | Login / Onboarding | Business details, approval status |
-| G2 | Quote Requests Board | New/Responded/Won/Lost |
-| G3 | Booking Calendar | Week/month, reschedule |
-| G4 | Reviews | View & respond |
-| G5 | Earnings / Payouts | Balance, history |
+| G1 | Login | Demo credentials, start onboarding |
+| G2 | Onboarding + Pending approval | Business details, services catalog, hours; wait / simulate approve |
+| G3 | Dashboard | KPIs (bookings, pending, quotes, rating) + quick access |
+| G4 | Booking Inbox | Tabs Pending / Awaiting customer / Confirmed / Rejected; review & confirm; reject flow |
+| G5 | Quote Requests Board | New/Responded/Won/Lost; submit quote dialog |
+| G6 | Calendar Availability | Week grid; Available / Booked / Blocked / Conflict; block / resolve / manage |
+| G7 | Services & Pricing | List + add/edit service (duration, AED price) |
+| G8 | Promotions Manager | Active promos, % / fixed discount, date range |
+| G9 | Reviews | Filters, sort, respond dialog |
+| G10 | Earnings & Payouts | Balances + searchable/filterable history |
+| G11 | Reports | Period KPIs + status / trend / demand charts |
+| G12 | Profile / Edit | Contact, hours, insurers, reset demo, language via toolbar |
+
+> Visily inspiration assets: `Docs/Sample Screens/` (see that folder’s README for file → screen mapping).
 
 **📦 Supplier App (Web)**
 
@@ -1126,11 +1170,36 @@ graph TD
 </details>
 
 <details>
-<summary><b>G2 — Garage Quote Requests Board</b></summary>
+<summary><b>G5 — Garage Quote Requests Board</b></summary>
 
 - Tabs: New · Responded · Won · Lost (counts).
 - Row: masked customer initial, car (make/model/year), insurer badge, media count, "Respond" CTA, age/SLA countdown.
 - Expand drawer: media gallery, damage text; quote form → Price, Time-to-complete, Pickup (Y/N), Notes; Submit.
+</details>
+
+<details>
+<summary><b>G4 — Booking Inbox + Confirm / Suggest</b></summary>
+
+- Tabs: Pending · Awaiting customer · Confirmed · Rejected.
+- Card: date chip, customer, service, vehicle, time; conflict warning when slot overlaps.
+- Primary: **Review & confirm** → dialog with Accept at requested time **or** Suggest another time.
+- Suggest mode: interactive **calendar grid** of free slots (not a plain dropdown); selected cell → Send suggestion → status Awaiting customer.
+- Reject route: reason/suggestion free text → Send Rejection.
+</details>
+
+<details>
+<summary><b>G6 — Calendar Availability + Conflict Resolve</b></summary>
+
+- Week columns × hour rows (business hours); chip per slot: Available / Booked / Blocked / Conflict.
+- Tap Available → block (general or booking-linked). Tap Blocked → unblock. Tap Booked → suggest/move. Tap Conflict → resolve.
+- Conflict dialog: Accept both (double-book) **or** move one booking via the same calendar suggest picker + notify/direct options.
+</details>
+
+<details>
+<summary><b>Toolbar — Language + Notifications</b></summary>
+
+- Language switcher: EN / AR / ES / FR / RU / DE; Arabic flips `dir=rtl` for layout.
+- Notifications menu: unread badge; items for pending bookings, today's reminders, new quotes, unanswered reviews; mark read / mark all.
 </details>
 
 <details>
@@ -1179,7 +1248,7 @@ graph TD
 | **Security** | OWASP ASVS L2; encryption in transit (TLS 1.2+) & at rest; JWT + refresh; RBAC |
 | **Privacy** | PII masking in RFPs; data minimization; consent management; right to erasure |
 | **Compliance** | UAE PDPL; localized data residency where required; PCI-DSS SAQ-A (tokenized payments) |
-| **Localization** | Full EN/AR with RTL mirroring; localized SMS/email/push; locale-aware dates/currency |
+| **Localization** | Garage UI: EN/AR/ES/FR/RU/DE with Arabic RTL; platform templates EN/AR-first; locale-aware dates/currency |
 | **Accessibility** | WCAG 2.1 AA (contrast, screen-reader labels, tap targets ≥ 44px) |
 | **Observability** | Centralized logs, metrics, distributed tracing; alerting on SLOs |
 | **Reliability** | Idempotent payment & quote submission; retry/queue for notifications |
@@ -1279,8 +1348,9 @@ Requirements: consistent user/garage IDs across web & mobile; funnel dashboards 
 
 | Area | Requirement |
 |---|---|
-| **Languages** | English + Arabic (full RTL), from MVP |
-| **RTL** | Mirrored layouts, icon direction, bidi text; localized numerals/dates/currency |
+| **Languages (Garage UI)** | English, Arabic, Spanish, French, Russian, German — full UI chrome translated from Garage prototype v1.1 |
+| **Languages (platform templates)** | English + Arabic for SMS / email / push at MVP; expand with markets |
+| **RTL** | Arabic mirrored layouts (MUI Emotion + stylis RTL in garage web); icon direction, bidi text; locale-aware dates/currency |
 | **Templates** | Localized SMS, email, push |
 | **UAE data protection** | UAE PDPL: lawful basis, consent, data-subject rights, breach process |
 | **Payments** | PCI-DSS via tokenized PSP; no raw card storage |
@@ -1408,6 +1478,21 @@ timeline
 | **Garage OS** | Supply-side SaaS toolset (calendar, leads, payouts, analytics) |
 | **Take-rate** | Platform commission as % of GMV |
 | **PII masking** | Hiding customer identity until quote acceptance |
+| **AwaitingCustomer** | Booking status after garage suggests an alternate `proposedAt` time |
+| **Conflict slot** | Calendar cell with overlapping active bookings (or customer-chosen busy slot) |
+
+### Garage Web Prototype (shipped in this repo)
+
+| Item | Detail |
+|---|---|
+| **Repo** | `go-garagi-garages` (this codebase) |
+| **Stack** | React 19 · Vite · TypeScript · MUI 7 (MD3) · Zustand · i18next · React Router 7 |
+| **Demo login** | `khalid@alquozgarage.ae` / `demo1234` |
+| **Seed** | Al Quoz Auto Care (UAE) — bookings, quotes, services, promotions, reviews, payouts, calendar |
+| **Reset** | Profile → Reset Demo Data |
+| **Persist** | Zustand key `go-garagi-garage-v6`; language `go-garagi-lang` |
+| **RN-ready** | Pure domain under `src/domain/` (types, booking/quote machines, availability, notifications, format) |
+| **Not yet** | Live backend APIs, chat, real escrow/PSP, staff RBAC, push/SMS, month calendar |
 
 ### References (market grounding)
 - IMARC Group — *Automotive Repair & Service Market* (2025 value ~$744B → ~$1.06T by 2034; APAC leading share).
@@ -1421,7 +1506,7 @@ Every `US-###` maps to an epic `GG-E#` and is realized by a component/service in
 
 ---
 
-**End of PRD — Go Garagi v1.0**
+**End of PRD — Go Garagi v1.1**
 *Companion technical design: `Go_Garagi_RFC.md`*
 
 </div>

@@ -9,10 +9,12 @@ Mobile-first and responsive for **Android & iOS** browsers (safe-area padding, t
 | Area | Screens |
 |---|---|
 | Auth & onboarding | Login, Register garage, Select services, Pending approval |
-| Operations | Dashboard KPIs, Booking inbox (accept/reject), Quote RFP board |
-| Schedule | Calendar availability (available / booked / blocked / conflict) |
+| Operations | Dashboard KPIs, Booking inbox (accept / reject / suggest time), Quote RFP board |
+| Schedule | Calendar availability (available / booked / blocked / conflict) + suggest picker |
 | Catalog | Services & pricing, Promotions manager |
-| Trust & money | Reviews + respond, Earnings & payouts, Reports |
+| Trust & money | Reviews + respond, Earnings & payouts (filters), Reports (charts) |
+| Notifications | In-app inbox (pending bookings, reminders, quotes, reviews) |
+| Localization | EN / AR / ES / FR / RU / DE · Arabic RTL |
 | Profile | View / edit garage profile, demo reset |
 
 ## Quick start
@@ -46,23 +48,25 @@ The app loads with seeded UAE garage data (Al Quoz Auto Care): bookings, acciden
 - MUI 7 (Material Design 3 tokens / components)
 - React Router 7
 - Zustand (persisted local state + seed data)
-- dayjs
+- i18next (EN / AR / ES / FR / RU / DE + RTL)
+- dayjs (locale-synced)
 
 ## RN-ready layout
 
 ```
 src/
-  domain/       # pure types, state machines, formatters (share with RN)
+  domain/       # pure types, state machines, availability, formatters (share with RN)
   data/         # seed / test data
   store/        # Zustand store
   features/     # screen modules
   components/   # app shell / shared UI
+  i18n/         # locale resources
   theme/        # MD3 theme
   navigation/   # routes
 ```
 
 ## Docs
 
-- Product: `Docs/Go_Garagi_PRD.md`
-- Architecture: `Docs/Go_Garagi_RFC.md`
-- UI inspiration: `Docs/Sample Screens/`
+- Product: `Docs/Go_Garagi_PRD.md` (v1.1)
+- Architecture: `Docs/Go_Garagi_RFC.md` (v1.1)
+- UI inspiration: `Docs/Sample Screens/` (see README for Visily → screen map)
