@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import dayjs from 'dayjs';
 import {
   DEMO_GARAGE,
   DEMO_USER,
@@ -13,10 +14,17 @@ import {
   SEED_SLOTS,
   SELECTED_CATALOG_IDS,
 } from '../data/seed';
+import {
+  bookingSlotParts,
+  findConflicts,
+  rebuildSlots,
+  slotKey,
+} from '../domain/availability';
 import { canTransition } from '../domain/bookingMachine';
 import { canQuoteTransition } from '../domain/quoteMachine';
 import type {
   AuthUser,
+  BlockReason,
   Booking,
   CalendarSlot,
   DashboardKpis,
@@ -27,8 +35,15 @@ import type {
   QuoteRequest,
   Review,
   ServiceOffering,
-  SlotStatus,
 } from '../domain/types';
+
+function withSyncedSlots(bookings: Booking[], slots: CalendarSlot[]) {
+  return rebuildSlots(slots, bookings);
+}
+
+function toIso(date: string, hour: number) {
+  return dayjs(`${date}T${String(hour).padStart(2, '0')}:00:00+04:00`).toISOString();
+}
 
 interface GarageState {
   user: AuthUser | null;
@@ -52,9 +67,23 @@ interface GarageState {
   setGarageStatus: (status: GarageStatus) => void;
   updateGarage: (patch: Partial<GarageProfile>) => void;
 
-  acceptBooking: (id: string) => void;
+  acceptBooking: (id: string, opts?: { forceDespiteConflict?: boolean }) => boolean;
   rejectBooking: (id: string, reason: string) => void;
   completeBooking: (id: string) => void;
+  suggestBookingTime: (id: string, newIso: string) => void;
+  moveBooking: (
+    id: string,
+    newIso: string,
+    mode: 'notify_customer' | 'direct_confirm',
+  ) => void;
+  /** Demo helper: simulate customer accepting a proposed time */
+  customerConfirmProposedTime: (id: string) => void;
+  resolveConflictAcceptBoth: (date: string, hour: number) => void;
+  resolveConflictReschedule: (
+    bookingId: string,
+    newIso: string,
+    notifyCustomer: boolean,
+  ) => void;
 
   submitQuote: (
     id: string,
@@ -70,7 +99,15 @@ interface GarageState {
   addPromotion: (promo: Omit<Promotion, 'id'>) => void;
   deletePromotion: (id: string) => void;
 
-  toggleSlot: (date: string, hour: number) => void;
+  blockSlot: (
+    date: string,
+    hour: number,
+    reason: BlockReason,
+    opts?: { bookingId?: string; note?: string },
+  ) => void;
+  unblockSlot: (date: string, hour: number) => void;
+  getConflictsForBooking: (bookingId: string) => Booking[];
+
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: (ids: string[]) => void;
   resetDemoData: () => void;
@@ -128,34 +165,81 @@ export const useGarageStore = create<GarageState>()(
       updateGarage: (patch) =>
         set((s) => ({ garage: { ...s.garage, ...patch } })),
 
-      acceptBooking: (id) => {
+      getConflictsForBooking: (bookingId) => {
+        const booking = get().bookings.find((b) => b.id === bookingId);
+        if (!booking) return [];
+        const { date, hour } = bookingSlotParts(
+          booking.proposedAt || booking.scheduledAt,
+        );
+        return findConflicts(get().bookings, date, hour, bookingId);
+      },
+
+      acceptBooking: (id, opts) => {
         const booking = get().bookings.find((b) => b.id === id);
-        if (!booking || !canTransition(booking.status, 'confirmed')) return;
-        set((s) => ({
-          bookings: s.bookings.map((b) =>
-            b.id === id ? { ...b, status: 'confirmed' } : b,
-          ),
-          kpis: {
-            ...s.kpis,
-            pendingBookings: Math.max(0, s.kpis.pendingBookings - 1),
-          },
-        }));
+        if (!booking) return false;
+        if (
+          booking.status !== 'pending' &&
+          booking.status !== 'awaiting_customer' &&
+          booking.status !== 'rescheduled'
+        ) {
+          if (!canTransition(booking.status, 'confirmed')) return false;
+        }
+
+        const when = booking.proposedAt || booking.scheduledAt;
+        const { date, hour } = bookingSlotParts(when);
+        const conflicts = findConflicts(get().bookings, date, hour, id);
+        if (conflicts.length > 0 && !opts?.forceDespiteConflict) {
+          return false;
+        }
+
+        set((s) => {
+          const bookings = s.bookings.map((b) =>
+            b.id === id
+              ? {
+                  ...b,
+                  status: 'confirmed' as const,
+                  scheduledAt: when,
+                  proposedAt: undefined,
+                  notifyCustomerPending: false,
+                  lastCustomerNotice: undefined,
+                }
+              : b,
+          );
+          return {
+            bookings,
+            slots: withSyncedSlots(bookings, s.slots),
+            kpis: {
+              ...s.kpis,
+              pendingBookings: Math.max(0, s.kpis.pendingBookings - 1),
+            },
+          };
+        });
+        return true;
       },
 
       rejectBooking: (id, reason) => {
         const booking = get().bookings.find((b) => b.id === id);
         if (!booking || !canTransition(booking.status, 'rejected')) return;
-        set((s) => ({
-          bookings: s.bookings.map((b) =>
+        set((s) => {
+          const bookings = s.bookings.map((b) =>
             b.id === id
-              ? { ...b, status: 'rejected', rejectionReason: reason }
+              ? {
+                  ...b,
+                  status: 'rejected' as const,
+                  rejectionReason: reason,
+                  proposedAt: undefined,
+                }
               : b,
-          ),
-          kpis: {
-            ...s.kpis,
-            pendingBookings: Math.max(0, s.kpis.pendingBookings - 1),
-          },
-        }));
+          );
+          return {
+            bookings,
+            slots: withSyncedSlots(bookings, s.slots),
+            kpis: {
+              ...s.kpis,
+              pendingBookings: Math.max(0, s.kpis.pendingBookings - 1),
+            },
+          };
+        });
       },
 
       completeBooking: (id) => {
@@ -166,11 +250,104 @@ export const useGarageStore = create<GarageState>()(
           booking.status !== 'confirmed'
         )
           return;
-        set((s) => ({
-          bookings: s.bookings.map((b) =>
-            b.id === id ? { ...b, status: 'completed' } : b,
-          ),
-        }));
+        set((s) => {
+          const bookings = s.bookings.map((b) =>
+            b.id === id ? { ...b, status: 'completed' as const } : b,
+          );
+          return { bookings, slots: withSyncedSlots(bookings, s.slots) };
+        });
+      },
+
+      suggestBookingTime: (id, newIso) => {
+        set((s) => {
+          const bookings = s.bookings.map((b) =>
+            b.id === id
+              ? {
+                  ...b,
+                  status: 'awaiting_customer' as const,
+                  proposedAt: newIso,
+                  notifyCustomerPending: true,
+                  lastCustomerNotice: `Suggested new time: ${dayjs(newIso).format('D MMM YYYY, h:mm A')}. Waiting for customer confirmation.`,
+                }
+              : b,
+          );
+          return { bookings, slots: withSyncedSlots(bookings, s.slots) };
+        });
+      },
+
+      moveBooking: (id, newIso, mode) => {
+        set((s) => {
+          const bookings = s.bookings.map((b) => {
+            if (b.id !== id) return b;
+            if (mode === 'direct_confirm') {
+              return {
+                ...b,
+                status: 'confirmed' as const,
+                scheduledAt: newIso,
+                proposedAt: undefined,
+                notifyCustomerPending: true,
+                lastCustomerNotice: `Moved to ${dayjs(newIso).format('D MMM YYYY, h:mm A')}. Customer notified.`,
+              };
+            }
+            return {
+              ...b,
+              status: 'awaiting_customer' as const,
+              proposedAt: newIso,
+              notifyCustomerPending: true,
+              lastCustomerNotice: `Proposed move to ${dayjs(newIso).format('D MMM YYYY, h:mm A')}. Awaiting customer confirmation.`,
+            };
+          });
+          return { bookings, slots: withSyncedSlots(bookings, s.slots) };
+        });
+      },
+
+      customerConfirmProposedTime: (id) => {
+        const booking = get().bookings.find((b) => b.id === id);
+        if (!booking?.proposedAt) return;
+        set((s) => {
+          const bookings = s.bookings.map((b) =>
+            b.id === id
+              ? {
+                  ...b,
+                  status: 'confirmed' as const,
+                  scheduledAt: b.proposedAt!,
+                  proposedAt: undefined,
+                  notifyCustomerPending: false,
+                  lastCustomerNotice: 'Customer confirmed the new time.',
+                }
+              : b,
+          );
+          return { bookings, slots: withSyncedSlots(bookings, s.slots) };
+        });
+      },
+
+      resolveConflictAcceptBoth: (date, hour) => {
+        set((s) => {
+          const bookings = s.bookings.map((b) => {
+            const parts = bookingSlotParts(b.proposedAt || b.scheduledAt);
+            if (
+              parts.date === date &&
+              parts.hour === hour &&
+              (b.status === 'pending' || b.status === 'awaiting_customer')
+            ) {
+              return {
+                ...b,
+                status: 'confirmed' as const,
+                scheduledAt: b.proposedAt || b.scheduledAt,
+                proposedAt: undefined,
+                lastCustomerNotice:
+                  'Accepted despite schedule conflict (double-booked bay).',
+              };
+            }
+            return b;
+          });
+          return { bookings, slots: withSyncedSlots(bookings, s.slots) };
+        });
+      },
+
+      resolveConflictReschedule: (bookingId, newIso, notifyCustomer) => {
+        if (notifyCustomer) get().suggestBookingTime(bookingId, newIso);
+        else get().moveBooking(bookingId, newIso, 'direct_confirm');
       },
 
       submitQuote: (id, quote) => {
@@ -185,10 +362,7 @@ export const useGarageStore = create<GarageState>()(
 
       addService: (service) =>
         set((s) => ({
-          services: [
-            ...s.services,
-            { ...service, id: `svc-${Date.now()}` },
-          ],
+          services: [...s.services, { ...service, id: `svc-${Date.now()}` }],
         })),
 
       updateService: (id, patch) =>
@@ -223,17 +397,67 @@ export const useGarageStore = create<GarageState>()(
           promotions: s.promotions.filter((p) => p.id !== id),
         })),
 
-      toggleSlot: (date, hour) =>
-        set((s) => ({
-          slots: s.slots.map((slot) => {
-            if (slot.date !== date || slot.hour !== hour) return slot;
-            if (slot.status === 'booked' || slot.status === 'conflict')
-              return slot;
-            const next: SlotStatus =
-              slot.status === 'available' ? 'blocked' : 'available';
-            return { ...slot, status: next };
-          }),
-        })),
+      blockSlot: (date, hour, reason, opts) => {
+        set((s) => {
+          const key = slotKey(date, hour);
+          let slots = [...s.slots];
+          const idx = slots.findIndex(
+            (sl) => sl.date === date && sl.hour === hour,
+          );
+          const nextSlot: CalendarSlot = {
+            date,
+            hour,
+            status: 'blocked',
+            blockReason: reason,
+            bookingIds: opts?.bookingId ? [opts.bookingId] : [],
+            note: opts?.note,
+          };
+          if (idx >= 0) slots[idx] = nextSlot;
+          else slots.push(nextSlot);
+
+          let bookings = s.bookings;
+          if (reason === 'booking' && opts?.bookingId) {
+            const iso = toIso(date, hour);
+            bookings = s.bookings.map((b) =>
+              b.id === opts.bookingId
+                ? { ...b, scheduledAt: iso, status: 'confirmed' as const }
+                : b,
+            );
+          }
+
+          // Preserve general blocks through rebuild
+          slots = withSyncedSlots(bookings, slots).map((sl) => {
+            if (slotKey(sl.date, sl.hour) === key && reason === 'general') {
+              return {
+                ...sl,
+                status: 'blocked',
+                blockReason: 'general',
+                note: opts?.note,
+              };
+            }
+            return sl;
+          });
+
+          return { slots, bookings };
+        });
+      },
+
+      unblockSlot: (date, hour) => {
+        set((s) => {
+          const slots = s.slots.map((sl) =>
+            sl.date === date && sl.hour === hour
+              ? {
+                  ...sl,
+                  status: 'available' as const,
+                  blockReason: undefined,
+                  note: undefined,
+                  bookingIds: [],
+                }
+              : sl,
+          );
+          return { slots: withSyncedSlots(s.bookings, slots) };
+        });
+      },
 
       markNotificationRead: (id) =>
         set((s) =>
@@ -258,7 +482,7 @@ export const useGarageStore = create<GarageState>()(
         }),
     }),
     {
-      name: 'go-garagi-garage-v3',
+      name: 'go-garagi-garage-v4',
       partialize: (s) => ({
         user: s.user,
         isAuthenticated: s.isAuthenticated,

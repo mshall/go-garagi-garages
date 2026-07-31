@@ -1,3 +1,4 @@
+import { rebuildSlots } from '../domain/availability';
 import type {
   AuthUser,
   Booking,
@@ -137,16 +138,18 @@ export const SEED_BOOKINGS: Booking[] = [
     customerName: 'Omar Hassan',
     customerInitials: 'OH',
     serviceName: 'Engine Diagnostic & Repair',
-    scheduledAt: '2026-08-01T14:00:00+04:00',
+    scheduledAt: '2026-08-03T10:00:00+04:00',
     status: 'pending',
     vehicle: '2019 Nissan Patrol',
+    customerRequestedDespiteConflict: true,
+    notes: 'Customer selected a busy slot from garage calendar — needs garage confirm.',
   },
   {
     id: 'GG-87640',
     customerName: 'Fatima Al Zaabi',
     customerInitials: 'FZ',
     serviceName: 'Brake Pad Replacement (Front)',
-    scheduledAt: '2026-08-01T11:30:00+04:00',
+    scheduledAt: '2026-08-03T10:00:00+04:00',
     status: 'confirmed',
     vehicle: '2022 BMW X5',
   },
@@ -155,9 +158,29 @@ export const SEED_BOOKINGS: Booking[] = [
     customerName: 'James Wright',
     customerInitials: 'JW',
     serviceName: 'AC System Recharge',
-    scheduledAt: '2026-07-30T09:00:00+04:00',
+    scheduledAt: '2026-08-03T14:00:00+04:00',
     status: 'confirmed',
     vehicle: '2020 Honda Accord',
+  },
+  {
+    id: 'GG-87670',
+    customerName: 'Ravi Patel',
+    customerInitials: 'RP',
+    serviceName: 'Engine Diagnostic Scan',
+    scheduledAt: '2026-08-05T14:00:00+04:00',
+    status: 'pending',
+    vehicle: '2018 Toyota Corolla',
+    customerRequestedDespiteConflict: true,
+    notes: 'Overlaps with another request at the same hour.',
+  },
+  {
+    id: 'GG-87671',
+    customerName: 'Elena Rossi',
+    customerInitials: 'ER',
+    serviceName: 'Tire Rotation & Balance',
+    scheduledAt: '2026-08-05T14:00:00+04:00',
+    status: 'pending',
+    vehicle: '2022 VW Tiguan',
   },
   {
     id: 'GG-87590',
@@ -192,7 +215,7 @@ export const SEED_BOOKINGS: Booking[] = [
     customerName: 'Daniel Okonkwo',
     customerInitials: 'DO',
     serviceName: 'Battery Replacement',
-    scheduledAt: '2026-08-02T09:30:00+04:00',
+    scheduledAt: '2026-08-04T09:00:00+04:00',
     status: 'pending',
     vehicle: '2017 Ford Explorer',
   },
@@ -201,7 +224,7 @@ export const SEED_BOOKINGS: Booking[] = [
     customerName: 'Noor Al Ketbi',
     customerInitials: 'NK',
     serviceName: 'Car Wash & Detailing',
-    scheduledAt: '2026-08-02T16:00:00+04:00',
+    scheduledAt: '2026-08-01T16:00:00+04:00',
     status: 'pending',
     vehicle: '2024 Range Rover Sport',
   },
@@ -597,28 +620,32 @@ export const SEED_KPIS: DashboardKpis = {
   ratingTrend: 0.1,
 };
 
-function buildCalendarSlots(): CalendarSlot[] {
-  const slots: CalendarSlot[] = [];
+function buildBaseCalendarSlots(): CalendarSlot[] {
   const days = ['2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06'];
   const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
-  const booked = new Set(['2026-08-03-9', '2026-08-03-14', '2026-08-05-13']);
-  const blocked = new Set(['2026-08-04-11']);
-  const conflict = new Set(['2026-08-05-14']);
+  const generalBlocked = new Set(['2026-08-04-11']);
+  const base: CalendarSlot[] = [];
 
   for (const date of days) {
     for (const hour of hours) {
       const key = `${date}-${hour}`;
-      let status: CalendarSlot['status'] = 'available';
-      if (booked.has(key)) status = 'booked';
-      else if (blocked.has(key)) status = 'blocked';
-      else if (conflict.has(key)) status = 'conflict';
-      slots.push({ date, hour, status });
+      if (generalBlocked.has(key)) {
+        base.push({
+          date,
+          hour,
+          status: 'blocked',
+          blockReason: 'general',
+          note: 'Staff meeting / bay closed',
+        });
+      } else {
+        base.push({ date, hour, status: 'available' });
+      }
     }
   }
-  return slots;
+  return base;
 }
 
-export const SEED_SLOTS = buildCalendarSlots();
+export const SEED_SLOTS = rebuildSlots(buildBaseCalendarSlots(), SEED_BOOKINGS);
 
 export const SELECTED_CATALOG_IDS = [
   'oil',

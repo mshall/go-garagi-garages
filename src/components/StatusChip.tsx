@@ -9,6 +9,7 @@ const bookingColors: Record<
   confirmed: 'success',
   rejected: 'error',
   rescheduled: 'info',
+  awaiting_customer: 'info',
   in_progress: 'primary',
   completed: 'success',
   cancelled: 'default',

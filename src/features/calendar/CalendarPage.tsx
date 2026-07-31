@@ -12,8 +12,14 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import dayjs from 'dayjs';
+import { bookingSlotParts } from '../../domain/availability';
+import type { Booking, SlotStatus } from '../../domain/types';
 import { useGarageStore } from '../../store/useGarageStore';
-import type { SlotStatus } from '../../domain/types';
+import {
+  BlockSlotDialog,
+  BookedSlotDialog,
+  ConflictResolveDialog,
+} from '../scheduling/SchedulingDialogs';
 
 const statusStyles: Record<
   SlotStatus,
@@ -22,7 +28,7 @@ const statusStyles: Record<
   available: { bgcolor: '#F8FAFC', color: '#64748B', label: 'Available' },
   booked: { bgcolor: '#16A34A', color: '#fff', label: 'Booked' },
   blocked: { bgcolor: '#F97316', color: '#fff', label: 'Blocked' },
-  conflict: { bgcolor: '#E2E8F0', color: '#B45309', label: 'Conflict' },
+  conflict: { bgcolor: '#FEF3C7', color: '#B45309', label: 'Conflict' },
 };
 
 function formatHour(hour: number) {
@@ -31,8 +37,17 @@ function formatHour(hour: number) {
 
 export function CalendarPage() {
   const slots = useGarageStore((s) => s.slots);
-  const toggleSlot = useGarageStore((s) => s.toggleSlot);
+  const bookings = useGarageStore((s) => s.bookings);
+  const unblockSlot = useGarageStore((s) => s.unblockSlot);
   const [weekOffset, setWeekOffset] = useState(0);
+  const [blockTarget, setBlockTarget] = useState<{ date: string; hour: number } | null>(
+    null,
+  );
+  const [conflictTarget, setConflictTarget] = useState<{
+    date: string;
+    hour: number;
+  } | null>(null);
+  const [manageBooking, setManageBooking] = useState<Booking | null>(null);
 
   const days = useMemo(() => {
     const base = dayjs('2026-08-03').add(weekOffset * 7, 'day');
@@ -40,9 +55,20 @@ export function CalendarPage() {
   }, [weekOffset]);
 
   const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
-  const hasConflict = slots.some((s) => s.status === 'conflict');
-
+  const conflictSlots = slots.filter((s) => s.status === 'conflict');
   const rangeLabel = `${days[0].format('MMM D')} – ${days[days.length - 1].format('MMM D, YYYY')}`;
+
+  const bookingsForSlot = (date: string, hour: number) =>
+    bookings.filter((b) => {
+      const p = bookingSlotParts(b.proposedAt || b.scheduledAt);
+      return (
+        p.date === date &&
+        p.hour === hour &&
+        ['pending', 'confirmed', 'awaiting_customer', 'rescheduled', 'in_progress'].includes(
+          b.status,
+        )
+      );
+    });
 
   return (
     <Stack spacing={2}>
@@ -91,7 +117,8 @@ export function CalendarPage() {
                 const slot = slots.find((s) => s.date === date && s.hour === hour);
                 const status = slot?.status ?? 'available';
                 const style = statusStyles[status];
-                const locked = status === 'booked' || status === 'conflict';
+                const linked = bookingsForSlot(date, hour);
+
                 return (
                   <Chip
                     key={`${date}-${hour}`}
@@ -101,12 +128,25 @@ export function CalendarPage() {
                           <WarningAmberIcon sx={{ fontSize: 14 }} />
                           <span>{style.label}</span>
                         </Stack>
+                      ) : status === 'blocked' && slot?.blockReason === 'general' ? (
+                        'Blocked'
+                      ) : status === 'blocked' ? (
+                        'Bay hold'
                       ) : (
                         style.label
                       )
                     }
                     onClick={() => {
-                      if (!locked && weekOffset === 0) toggleSlot(date, hour);
+                      if (weekOffset !== 0) return;
+                      if (status === 'available') {
+                        setBlockTarget({ date, hour });
+                      } else if (status === 'blocked') {
+                        unblockSlot(date, hour);
+                      } else if (status === 'conflict') {
+                        setConflictTarget({ date, hour });
+                      } else if (status === 'booked' && linked[0]) {
+                        setManageBooking(linked[0]);
+                      }
                     }}
                     sx={{
                       width: '100%',
@@ -115,8 +155,10 @@ export function CalendarPage() {
                       bgcolor: style.bgcolor,
                       color: style.color,
                       fontWeight: 600,
-                      cursor: locked ? 'default' : 'pointer',
+                      cursor: weekOffset === 0 ? 'pointer' : 'default',
                       opacity: weekOffset !== 0 ? 0.55 : 1,
+                      border:
+                        status === 'conflict' ? '1px solid #F59E0B' : undefined,
                     }}
                   />
                 );
@@ -126,26 +168,75 @@ export function CalendarPage() {
         </Box>
       </Box>
 
-      {hasConflict && weekOffset === 0 && (
-        <Alert severity="warning" icon={<WarningAmberIcon />}>
-          <Typography fontWeight={700}>Scheduling Conflict!</Typography>
-          Some time slots overlap with existing bookings or events. Please review
-          them to avoid double-bookings.
+      {conflictSlots.length > 0 && weekOffset === 0 && (
+        <Alert
+          severity="warning"
+          icon={<WarningAmberIcon />}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() =>
+                setConflictTarget({
+                  date: conflictSlots[0].date,
+                  hour: conflictSlots[0].hour,
+                })
+              }
+            >
+              Resolve
+            </Button>
+          }
+        >
+          <Typography fontWeight={700}>Scheduling conflict!</Typography>
+          {conflictSlots.length} overlapping slot
+          {conflictSlots.length > 1 ? 's' : ''}. Tap a conflict cell to accept both
+          times or suggest another availability.
         </Alert>
       )}
 
       <Card>
         <CardContent>
-          <Typography variant="body2" color="text.secondary">
-            Tap Available ↔ Blocked to update availability. Booked and conflict
-            slots are locked.
+          <Typography variant="body2" color="text.secondary" paragraph>
+            Tap <strong>Available</strong> to block (general or booking-linked). Tap{' '}
+            <strong>Blocked</strong> to unblock. Tap <strong>Booked</strong> to suggest
+            / move the customer. Tap <strong>Conflict</strong> to resolve.
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Customers can request busy slots from the garage calendar; those land as
+            conflicts here until you confirm or propose a new time.
           </Typography>
         </CardContent>
       </Card>
 
-      <Button variant="contained" color="success" size="large" fullWidth>
+      <Button
+        variant="contained"
+        color="success"
+        size="large"
+        fullWidth
+        onClick={() => {
+          /* slots persist live; button confirms UX */
+        }}
+      >
         Save Availability
       </Button>
+
+      <BlockSlotDialog
+        open={!!blockTarget}
+        date={blockTarget?.date ?? ''}
+        hour={blockTarget?.hour ?? 0}
+        onClose={() => setBlockTarget(null)}
+      />
+      <ConflictResolveDialog
+        open={!!conflictTarget}
+        date={conflictTarget?.date ?? ''}
+        hour={conflictTarget?.hour ?? 0}
+        onClose={() => setConflictTarget(null)}
+      />
+      <BookedSlotDialog
+        open={!!manageBooking}
+        booking={manageBooking}
+        onClose={() => setManageBooking(null)}
+      />
     </Stack>
   );
 }

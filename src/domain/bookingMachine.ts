@@ -3,9 +3,10 @@
 import type { BookingStatus } from './types';
 
 const transitions: Record<BookingStatus, BookingStatus[]> = {
-  pending: ['confirmed', 'rejected', 'cancelled'],
-  confirmed: ['rescheduled', 'in_progress', 'cancelled'],
-  rescheduled: ['confirmed', 'cancelled'],
+  pending: ['confirmed', 'rejected', 'cancelled', 'awaiting_customer', 'rescheduled'],
+  confirmed: ['rescheduled', 'awaiting_customer', 'in_progress', 'cancelled'],
+  rescheduled: ['confirmed', 'awaiting_customer', 'cancelled'],
+  awaiting_customer: ['confirmed', 'pending', 'cancelled', 'rejected'],
   in_progress: ['completed'],
   completed: [],
   rejected: [],

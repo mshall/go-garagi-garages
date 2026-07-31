@@ -7,6 +7,7 @@ export type BookingStatus =
   | 'confirmed'
   | 'rejected'
   | 'rescheduled'
+  | 'awaiting_customer'
   | 'in_progress'
   | 'completed'
   | 'cancelled';
@@ -14,6 +15,8 @@ export type BookingStatus =
 export type QuoteStatus = 'new' | 'responded' | 'won' | 'lost';
 
 export type SlotStatus = 'available' | 'booked' | 'blocked' | 'conflict';
+
+export type BlockReason = 'general' | 'booking';
 
 export type DiscountType = 'percentage' | 'fixed';
 
@@ -67,6 +70,13 @@ export interface Booking {
   notes?: string;
   vehicle?: string;
   rejectionReason?: string;
+  /** Suggested alternative awaiting customer confirmation */
+  proposedAt?: string;
+  /** Customer chose a busy/conflict slot intentionally */
+  customerRequestedDespiteConflict?: boolean;
+  /** Garage moved slot and notified customer */
+  notifyCustomerPending?: boolean;
+  lastCustomerNotice?: string;
 }
 
 export interface QuoteRequest {
@@ -130,6 +140,9 @@ export interface CalendarSlot {
   date: string;
   hour: number;
   status: SlotStatus;
+  blockReason?: BlockReason;
+  bookingIds?: string[];
+  note?: string;
 }
 
 export interface DashboardKpis {
