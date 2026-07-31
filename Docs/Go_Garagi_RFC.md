@@ -26,7 +26,7 @@
 | **Author** | Engineering / Architecture |
 | **Reviewers** | Eng Lead · Platform · Security · SRE · Product |
 | **Companion** | `Go_Garagi_PRD.md` (product requirements) |
-| **Garage prototype repo** | `go-garagi-garages` (this codebase) — client-only Garage OS demo |
+| **Garage prototype repo** | `go-garagi-garages` — Garage OS web at `/gogaragi-garage/` + garage API at `/gogaragi-garage/api/` |
 | **Mandated stack** | TypeScript + Node.js (backend) · React (web) → React Native (mobile) · AWS |
 
 ### Change Log
@@ -1176,9 +1176,13 @@ gantt
 
 | Concern | Location in `go-garagi-garages` |
 |---|---|
+| Web mount | `/gogaragi-garage/` (`vite` `base` + React Router `basename`) |
+| Garage API mount | `/gogaragi-garage/api/` → `server/modules/garage` (Express; Nest `GarageModule` later) |
+| Shared path constants | `shared/appPaths.ts` |
 | Domain (RN-ready) | `src/domain/` — types, `bookingMachine`, `availability`, `notifications`, `format` |
 | Seed / demo data | `src/data/seed.ts` (Al Quoz Auto Care) |
 | Client store | `src/store/useGarageStore.ts` (Zustand persist `go-garagi-garage-v6`) |
+| API client | `src/api/garageClient.ts` |
 | Screens | `src/features/*` |
 | i18n | `src/i18n/` + language persist `go-garagi-lang` |
 | Theme | `src/theme/md3Theme.ts` |

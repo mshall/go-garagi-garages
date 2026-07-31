@@ -1486,13 +1486,15 @@ timeline
 | Item | Detail |
 |---|---|
 | **Repo** | `go-garagi-garages` (this codebase) |
-| **Stack** | React 19 · Vite · TypeScript · MUI 7 (MD3) · Zustand · i18next · React Router 7 |
+| **Web mount** | `/gogaragi-garage/` |
+| **Garage API** | `/gogaragi-garage/api/` (garage-only BFF module; modular-monolith slice) |
+| **Stack** | React 19 · Vite · TypeScript · MUI 7 (MD3) · Zustand · i18next · React Router 7 · Express garage module |
 | **Demo login** | `khalid@alquozgarage.ae` / `demo1234` |
 | **Seed** | Al Quoz Auto Care (UAE) — bookings, quotes, services, promotions, reviews, payouts, calendar |
 | **Reset** | Profile → Reset Demo Data |
 | **Persist** | Zustand key `go-garagi-garage-v6`; language `go-garagi-lang` |
 | **RN-ready** | Pure domain under `src/domain/` (types, booking/quote machines, availability, notifications, format) |
-| **Not yet** | Live backend APIs, chat, real escrow/PSP, staff RBAC, push/SMS, month calendar |
+| **Not yet** | Full Nest modulith, chat, real escrow/PSP, staff RBAC, push/SMS, month calendar |
 
 ### References (market grounding)
 - IMARC Group — *Automotive Repair & Service Market* (2025 value ~$744B → ~$1.06T by 2034; APAC leading share).

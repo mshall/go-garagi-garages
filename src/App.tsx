@@ -7,6 +7,7 @@ import rtlPlugin from 'stylis-plugin-rtl';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter } from 'react-router-dom';
+import { APP_ROOT } from './config/paths';
 import { isRtlLanguage } from './i18n';
 import { AppRouter } from './navigation/AppRouter';
 import { md3ThemeOptions } from './theme/md3Theme';
@@ -43,7 +44,7 @@ export default function App() {
     <CacheProvider value={rtl ? rtlCache : ltrCache}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <BrowserRouter>
+        <BrowserRouter basename={APP_ROOT}>
           <AppRouter />
         </BrowserRouter>
       </ThemeProvider>

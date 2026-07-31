@@ -1,8 +1,18 @@
 # Go Garagi — Garage App
 
-Material Design 3 **React (Vite + TypeScript)** web dashboard for garage owners and staff. Built from `Docs/Go_Garagi_PRD.md`, `Docs/Go_Garagi_RFC.md`, and the Visily sample screens in `Docs/Sample Screens/`.
+Material Design 3 **React (Vite + TypeScript)** web dashboard for garage owners and staff, plus a **garage-scoped API** module for the modular-monolith MVP.
 
-Mobile-first and responsive for **Android & iOS** browsers (safe-area padding, touch targets, bottom navigation). Domain logic under `src/domain/` is platform-agnostic for a future **React Native** port (≥70% non-UI reuse target per RFC).
+Built from `Docs/Go_Garagi_PRD.md`, `Docs/Go_Garagi_RFC.md`, and Visily samples in `Docs/Sample Screens/`.
+
+## URLs (local)
+
+| Surface | URL |
+|---|---|
+| Web app | http://localhost:5173/gogaragi-garage/ |
+| Garage API | http://localhost:5173/gogaragi-garage/api/ (proxied) |
+| API direct | http://localhost:8787/gogaragi-garage/api/v1/health |
+
+Bare `http://localhost:5173/` redirects to `/gogaragi-garage/`.
 
 ## Features (MVP Garage OS)
 
@@ -24,38 +34,53 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (usually `http://localhost:5173`).
+Open **http://localhost:5173/gogaragi-garage/**.
 
 **Demo login** (pre-filled):
 
 - Email: `khalid@alquozgarage.ae`
 - Password: `demo1234`
 
-The app loads with seeded UAE garage data (Al Quoz Auto Care): bookings, accident RFPs, services, promotions, reviews, and payouts. Use **Profile → Reset Demo Data** to restore seed state. Use **Start onboarding** on the login screen to walk through registration → pending approval → simulate admin approval.
+Login hits `POST /gogaragi-garage/api/v1/auth/login`, then hydrates the local Zustand demo store. Use **Profile → Reset Demo Data** to restore seed state.
 
 ## Scripts
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Local development server |
-| `npm run build` | Typecheck + production build |
+| `npm run dev` | Garage API + Vite web (recommended) |
+| `npm run dev:web` | Vite only |
+| `npm run dev:api` | Garage API only (`:8787`) |
+| `npm run build` | Typecheck + production web build |
 | `npm run preview` | Preview production build |
+| `npm run start:api` | Run API without watch |
 | `npm run lint` | Lint with oxlint |
 
 ## Stack
 
 - React 19 + Vite + TypeScript
-- MUI 7 (Material Design 3 tokens / components)
-- React Router 7
-- Zustand (persisted local state + seed data)
+- MUI 7 (Material Design 3)
+- React Router 7 (`basename=/gogaragi-garage`)
+- Zustand (persisted demo state)
+- Express garage API module (`server/modules/garage`)
 - i18next (EN / AR / ES / FR / RU / DE + RTL)
 - dayjs (locale-synced)
+
+## Modular monolith note
+
+This repo hosts only the **garage** audience slice:
+
+- Web: `/gogaragi-garage/`
+- API: `/gogaragi-garage/api/` → `server/modules/garage`
+
+Customer / supplier / insurance / admin modules will mount under their own roots in the shared NestJS modulith later. See `server/README.md`.
 
 ## RN-ready layout
 
 ```
 src/
-  domain/       # pure types, state machines, availability, formatters (share with RN)
+  api/          # garage BFF client
+  config/       # APP_ROOT / API_ROOT helpers
+  domain/       # pure types, machines, availability (share with RN)
   data/         # seed / test data
   store/        # Zustand store
   features/     # screen modules
@@ -63,10 +88,15 @@ src/
   i18n/         # locale resources
   theme/        # MD3 theme
   navigation/   # routes
+server/
+  modules/garage/   # garage-only Express router
+shared/
+  appPaths.ts       # shared mount constants
 ```
 
 ## Docs
 
 - Product: `Docs/Go_Garagi_PRD.md` (v1.1)
 - Architecture: `Docs/Go_Garagi_RFC.md` (v1.1)
-- UI inspiration: `Docs/Sample Screens/` (see README for Visily → screen map)
+- UI inspiration: `Docs/Sample Screens/`
+- Garage API: `server/README.md`
